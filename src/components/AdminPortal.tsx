@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -239,7 +241,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBackToPortfolio, onP
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(api.isAuthenticated());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsAuthenticated(api.isAuthenticated());
+  }, []);
   const [username, setUsername] = useState<string>('admin');
   const [password, setPassword] = useState<string>('durozenAdmin2026!');
   const [authError, setAuthError] = useState<string | null>(null);

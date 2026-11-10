@@ -1,5 +1,9 @@
 node_modules
 dist
+.next
+src_backup_vite
+*.tsbuildinfo
+AGENTS.md
 backend
 db
 venv
@@ -9,5 +13,4 @@ __pycache__
 .git
 .github
 *.log
-.env
-.env.local
+.env*

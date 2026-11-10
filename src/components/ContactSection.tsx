@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
@@ -139,7 +141,7 @@ export const ContactSection: React.FC = () => {
           className="text-3xl sm:text-5xl font-black text-slate-950 tracking-tight leading-tight mb-4"
           style={{ fontFamily: 'var(--font-display)' }}
         >
-          Let's Build Something <span className="text-[#E52521]">Exceptional Together</span>.
+          Let's Build Something Exceptional Together.
         </h2>
 
         <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
@@ -356,8 +358,12 @@ export const ContactSection: React.FC = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-md space-y-5"
+            className="rounded-3xl bg-white border border-slate-200/90 shadow-md overflow-hidden"
           >
+            {/* Top Brand Blue Accent Line */}
+            <div className="h-1.5 w-full bg-[#2563EB]" />
+
+            <div className="p-6 sm:p-7 space-y-5">
             <div className="text-[11px] font-mono uppercase tracking-widest text-slate-400 font-bold">
               DIRECT COMMUNICATIONS
             </div>
@@ -446,6 +452,7 @@ export const ContactSection: React.FC = () => {
                 Connect directly with our team on WhatsApp
               </p>
             </div>
+            </div>
           </motion.div>
 
           {/* Card 2: OFFICE LOCATION · MAP */}
@@ -454,8 +461,12 @@ export const ContactSection: React.FC = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-md space-y-4"
+            className="rounded-3xl bg-white border border-slate-200/90 shadow-md overflow-hidden"
           >
+            {/* Top Brand Green Accent Line */}
+            <div className="h-1.5 w-full bg-[#22C55E]" />
+
+            <div className="p-6 space-y-4">
             {/* Header with Coordinates */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 font-mono font-bold tracking-wider text-slate-700 uppercase text-[11px]">
@@ -498,6 +509,7 @@ export const ContactSection: React.FC = () => {
                 <span>View Full Map</span>
                 <ExternalLink className="w-3 h-3 text-blue-600" />
               </a>
+            </div>
             </div>
           </motion.div>
 

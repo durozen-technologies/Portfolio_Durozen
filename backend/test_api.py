@@ -7,6 +7,7 @@ if BASE_DIR not in sys.path:
 
 from fastapi.testclient import TestClient
 from app.main import app
+from app.config import settings
 
 def test_api():
     with TestClient(app) as client:
@@ -22,8 +23,8 @@ def test_api():
         assert len(r.json()) >= 10
         print(f"   First project: {r.json()[0]['name']} ({r.json()[0]['url']})")
 
-        print("\n3. Testing /api/auth/login with default credentials...")
-        r = client.post("/api/auth/login", json={"username": "admin", "password": "durozenAdmin2026!"})
+        print("\n3. Testing /api/auth/login with configured credentials...")
+        r = client.post("/api/auth/login", json={"username": settings.ADMIN_USERNAME, "password": settings.ADMIN_PASSWORD})
         print("   Status:", r.status_code)
         assert r.status_code == 200
         token = r.json()["access_token"]

@@ -37,18 +37,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Install Playwright chromium browser & dependencies for screenshots
-RUN playwright install --with-deps chromium && \
+# Install Playwright chromium browser & dependencies in shared path
+RUN mkdir -p /ms-playwright && \
+    playwright install --with-deps chromium && \
+    chmod -R 755 /ms-playwright && \
     rm -rf /var/lib/apt/lists/*
+
+# Create non-root application user
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home appuser
 
 # Copy application source code
 COPY . /app
 
-# Ensure runtime directories exist and seed existing screenshots
-RUN mkdir -p /app/uploads /public/screenshots && \
-    cp -r /app/uploads/screenshots/* /public/screenshots/ 2>/dev/null || true
+# Ensure runtime directories exist, seed existing screenshots, and set non-root ownership
+RUN mkdir -p /app/uploads/screenshots /public/screenshots /public/uploads && \
+    cp -r /app/uploads/screenshots/* /public/screenshots/ 2>/dev/null || true && \
+    chown -R appuser:appgroup /app /public
+
+USER appuser
 
 # Expose backend API port
 EXPOSE 8000

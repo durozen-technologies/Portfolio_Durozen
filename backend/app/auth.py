@@ -15,10 +15,11 @@ def hash_password(password: str) -> str:
 
 def verify_admin_credentials(username: str, password: str, db=None) -> bool:
     # 1. Super admin in settings (default)
-    user_match = hmac.compare_digest(username.strip(), settings.ADMIN_USERNAME.strip())
-    pass_match = hmac.compare_digest(password.strip(), settings.ADMIN_PASSWORD.strip())
-    if user_match and pass_match:
-        return True
+    if settings.ADMIN_PASSWORD.strip():
+        user_match = hmac.compare_digest(username.strip(), settings.ADMIN_USERNAME.strip())
+        pass_match = hmac.compare_digest(password.strip(), settings.ADMIN_PASSWORD.strip())
+        if user_match and pass_match:
+            return True
 
     # 2. Created admin accounts in database
     if db is not None:

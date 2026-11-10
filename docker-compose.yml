@@ -1,28 +1,26 @@
 # ==============================================================
 # DUROZEN Creative Portfolio - Docker Compose Architecture
-# Multi-stage containerized setup for Frontend, Backend & Database
+# Ready for Dokploy & Multi-stage Container Deployment
 # ==============================================================
-
-version: '3.8'
 
 services:
   # ------------------------------------------------------------
-  # PostgreSQL Database Service
+  # PostgreSQL Database Service (Internal Network Only)
   # ------------------------------------------------------------
   db:
     build:
       context: ./db
       dockerfile: Dockerfile
-    image: durozen-db:latest
-    container_name: durozen-db
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-durozen_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "${DB_PORT:-5432}:5432"
+    expose:
+      - "5432"
     volumes:
       - durozen_pgdata:/var/lib/postgresql/data
     networks:
@@ -35,29 +33,29 @@ services:
       start_period: 5s
 
   # ------------------------------------------------------------
-  # FastAPI Backend Service
+  # FastAPI Backend Service (Internal Network Only)
   # ------------------------------------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: durozen-backend:latest
-    container_name: durozen-backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-durozen_db}
-      SECRET_KEY: ${SECRET_KEY:-durozen-creative-portfolio-secret-key-change-in-production}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@db:5432/${POSTGRES_DB:-durozen_db}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-durozenAdmin2026!}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       PORT: 8000
-    ports:
-      - "${PORT:-8000}:8000"
+    expose:
+      - "8000"
     volumes:
       - durozen_uploads:/app/uploads
       - durozen_screenshots:/public/screenshots
@@ -71,26 +69,29 @@ services:
       start_period: 10s
 
   # ------------------------------------------------------------
-  # Vite React Frontend Service (Served via Nginx)
+  # Next.js Frontend Service (Connect Dokploy Domain to Port 3000)
   # ------------------------------------------------------------
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
-    image: durozen-frontend:latest
-    container_name: durozen-frontend
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        BACKEND_URL: ${DOCKER_BACKEND_URL:-http://backend:8000}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       backend:
         condition: service_healthy
-    ports:
-      - "${FRONTEND_PORT:-3000}:80"
+    environment:
+      BACKEND_URL: ${DOCKER_BACKEND_URL:-http://backend:8000}
+    expose:
+      - "3000"
     networks:
       - durozen-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -101,16 +102,12 @@ services:
 # --------------------------------------------------------------
 volumes:
   durozen_pgdata:
-    name: durozen_pgdata
   durozen_uploads:
-    name: durozen_uploads
   durozen_screenshots:
-    name: durozen_screenshots
 
 # --------------------------------------------------------------
 # Isolated Bridge Network
 # --------------------------------------------------------------
 networks:
   durozen-network:
-    name: durozen-network
     driver: bridge

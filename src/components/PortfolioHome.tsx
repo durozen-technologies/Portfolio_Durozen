@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LIVE_PROJECTS, ProjectItem } from '../data/projects';
@@ -70,17 +72,6 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
     ? projects
     : projects.filter(p => p.category === activeCategory);
 
-  // DUROZEN letter array for letter-by-letter animation
-  const durozenLetters = [
-    { char: 'D', color: '#E52521' }, // Red
-    { char: 'U', color: '#FACC15' }, // Yellow
-    { char: 'R', color: '#FACC15' }, // Yellow
-    { char: 'O', color: '#22C55E' }, // Green
-    { char: 'Z', color: '#22C55E' }, // Green
-    { char: 'E', color: '#2563EB' }, // Blue
-    { char: 'N', color: '#2563EB' }, // Blue
-  ];
-
   const handleNav = (path: string) => {
     if (onNavigate) {
       onNavigate(path);
@@ -119,38 +110,23 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
         </div>
 
         {/* Seamless Hero Content (Directly over the crystal-clear video) */}
-        <div className="max-w-4xl mx-auto flex flex-col items-center relative z-10 px-4 sm:px-6">
+        <div className="w-full max-w-7xl mx-auto flex justify-center md:justify-end relative z-10">
+          <div className="max-w-4xl flex flex-col items-center text-center relative z-10 px-4 sm:px-6">
 
-          {/* Animated Letter-by-Letter DUROZEN Brand Name */}
+          {/* Animated DUROZEN Brand Logo */}
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            whileHover={{ scale: 1.05, y: -3, transition: { duration: 0.2 } }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="relative mb-3"
           >
-            <div className="relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-1 cursor-default">
-              {durozenLetters.map((item, idx) => (
-                <motion.span
-                  key={idx}
-                  initial={{ opacity: 0, scale: 0.35, y: -16 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{
-                    duration: 0.55,
-                    delay: 0.12 + idx * 0.08,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  whileHover={{
-                    scale: 1.25,
-                    y: -4,
-                    transition: { duration: 0.18 },
-                  }}
-                  className="text-2xl sm:text-3xl md:text-4xl font-black font-display tracking-tight cursor-default select-none drop-shadow-md"
-                  style={{ color: item.color }}
-                >
-                  {item.char}
-                </motion.span>
-              ))}
-            </div>
+            <img
+              src="/assets/aistudio/Durozen_500x500.jpg-removebg-preview__1__8c1ed3e1.png"
+              alt="DUROZEN"
+              className="h-24 sm:h-28 md:h-32 w-auto -my-5 sm:-my-6 object-contain drop-shadow-md select-none pointer-events-none"
+              draggable={false}
+            />
           </motion.div>
 
           {/* Animated Tagline: "Explore. Experience. Create." */}
@@ -253,6 +229,7 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
               <span>Explore Projects</span>
             </a>
           </motion.div>
+          </div>
         </div>
       </section>
 

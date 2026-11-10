@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectItem } from '../data/projects';
 import { ArrowUpRight, Globe, Sparkles, Car, Activity, Palmtree, Trees } from 'lucide-react';

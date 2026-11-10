@@ -9,5 +9,5 @@ __pycache__
 *.sqlite
 *.sqlite3
 durozen_local.db
-.env
+.env*
 *.log

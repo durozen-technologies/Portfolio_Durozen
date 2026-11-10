@@ -1,29 +1,29 @@
 {
-  "name": "react-example",
+  "name": "durozen-portfolio",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev": "next dev -p 3000 --webpack",
+    "build": "next build --webpack",
+    "start": "next start -p 3000",
     "backend": "backend\\venv\\Scripts\\python.exe backend\\run.py",
     "backend:test": "backend\\venv\\Scripts\\python.exe backend\\test_api.py",
-    "build": "vite build",
-    "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf .next dist",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.3.3",
-    "@vitejs/plugin-react": "^6.1.1",
+    "@tailwindcss/postcss": "^4.3.5",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "next": "^16.4.5",
+    "postcss": "^8.5.32",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
-    "three": "^0.187.0",
-    "vite": "^8.3.0"
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
@@ -32,7 +32,6 @@
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.187.0",
     "autoprefixer": "^10.4.21",
-    "esbuild": "^0.28.2",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2"

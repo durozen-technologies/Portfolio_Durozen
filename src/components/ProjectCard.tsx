@@ -1,8 +1,17 @@
+'use client';
+
 import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { ProjectItem } from '../data/projects';
 import { ProjectMockupPreview } from './ProjectMockupPreview';
 import { ArrowUpRight } from 'lucide-react';
+
+const CARD_TOP_COLORS = [
+  '#E52521', // DUROZEN Red
+  '#FACC15', // DUROZEN Yellow
+  '#22C55E', // DUROZEN Green
+  '#2563EB', // DUROZEN Blue
+];
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -13,6 +22,7 @@ interface ProjectCardProps {
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onOpenQuickView }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const topColor = CARD_TOP_COLORS[index % CARD_TOP_COLORS.length];
 
   // 3D Magnetic tilt motion values based on cursor coordinates
   const x = useMotionValue(0);
@@ -70,12 +80,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onOpen
         rotateX: isHovered ? rotateX : 0,
         rotateY: isHovered ? rotateY : 0,
         transformStyle: 'preserve-3d',
-        borderColor: isHovered ? project.accentColor : '#E2E8F0', // Sleek accent outline on hover
-        boxShadow: isHovered 
-          ? `0 14px 28px -6px rgba(15, 23, 42, 0.1), 0 0 0 1px ${project.accentColor}`
+        boxShadow: isHovered
+          ? '0 14px 28px -6px rgba(15, 23, 42, 0.12)'
           : '0 2px 8px -2px rgba(15, 23, 42, 0.05)',
       }}
-      className="group relative flex flex-col h-full bg-white border sm:border-2 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-5 transition-all duration-200 hover:-translate-y-1 focus:outline-none"
+      className="group relative flex flex-col h-full bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-1 focus:outline-none"
     >
       {/* Subtle, soft ambient tint on hover (gentle, not too bright) */}
       <div 
@@ -83,18 +92,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onOpen
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
-          background: `radial-gradient(circle at 50% 0%, ${project.accentColor}10 0%, transparent 65%)`,
+          background: `radial-gradient(circle at 50% 0%, ${topColor}10 0%, transparent 65%)`,
         }}
       />
 
-      {/* Elegant, clean top accent line */}
-      <div 
-        className="h-0.5 sm:h-1 w-full rounded-full mb-2 sm:mb-3.5 transition-colors duration-200"
-        style={{
-          backgroundColor: isHovered ? project.accentColor : '#F1F5F9',
-        }}
+      {/* Top Color Accent Strip (Above Only) */}
+      <div
+        className="h-1.5 w-full shrink-0"
+        style={{ backgroundColor: topColor }}
       />
 
+      <div className="p-2.5 sm:p-4 md:p-5 flex flex-col flex-1">
       {/* 1. Project Thumbnail / Preview (Simulated Browser Screen) */}
       <div className="overflow-hidden rounded-lg sm:rounded-xl border border-slate-200/80 shadow-xs shrink-0">
         <ProjectMockupPreview project={project} />
@@ -108,9 +116,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onOpen
             <span 
               className="font-semibold px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10.5px] tracking-wide uppercase transition-colors duration-200 border truncate max-w-[80px] sm:max-w-none"
               style={{
-                backgroundColor: isHovered ? `${project.accentColor}12` : '#F8FAFC',
-                color: isHovered ? project.accentColor : '#475569',
-                borderColor: isHovered ? `${project.accentColor}40` : '#E2E8F0',
+                backgroundColor: isHovered ? `${topColor}12` : '#F8FAFC',
+                color: isHovered ? topColor : '#475569',
+                borderColor: isHovered ? `${topColor}40` : '#E2E8F0',
               }}
             >
               {project.category}
@@ -171,6 +179,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onOpen
             <span>Quick View</span>
           </button>
         </div>
+      </div>
       </div>
     </motion.div>
   );

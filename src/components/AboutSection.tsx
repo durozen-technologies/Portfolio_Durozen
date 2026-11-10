@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Building2 } from 'lucide-react';
@@ -47,11 +49,7 @@ export const AboutSection: React.FC = () => {
           className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-950 tracking-tight leading-[1.12] mb-6 text-depth-3d"
           style={{ fontFamily: 'var(--font-display)' }}
         >
-          Crafting High-Performance Technology with{' '}
-          <span className="animate-color-shift-text drop-shadow-xs">
-            Human Ingenuity
-          </span>
-          .
+          Crafting High-Performance Technology with Human Ingenuity.
         </motion.h2>
 
         {/* Official Description */}

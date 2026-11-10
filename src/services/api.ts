@@ -1,6 +1,6 @@
 import { LIVE_PROJECTS, ProjectItem } from '../data/projects';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) || 'http://localhost:8000';
 const TOKEN_KEY = 'durozen_admin_token';
 const USER_KEY = 'durozen_admin_user';
 
@@ -27,11 +27,13 @@ class ApiService {
   private token: string | null = null;
 
   constructor() {
-    this.token = localStorage.getItem(TOKEN_KEY);
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem(TOKEN_KEY);
+    }
   }
 
   public getToken(): string | null {
-    if (!this.token) {
+    if (!this.token && typeof window !== 'undefined') {
       this.token = localStorage.getItem(TOKEN_KEY);
     }
     return this.token;
@@ -42,7 +44,10 @@ class ApiService {
   }
 
   public getAdminUser(): string | null {
-    return localStorage.getItem(USER_KEY);
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(USER_KEY);
+    }
+    return null;
   }
 
   private getAuthHeaders(): HeadersInit {
@@ -54,11 +59,11 @@ class ApiService {
   }
 
   private async fetchWithFallback(endpoint: string, options: RequestInit = {}): Promise<Response> {
-    const baseOverride = import.meta.env.VITE_API_BASE_URL;
+    const baseOverride = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL);
     const candidates = baseOverride 
       ? [`${baseOverride}${endpoint}`]
       : [
-          endpoint, // 1. Via Vite dev server proxy
+          endpoint, // 1. Via Next.js dev server rewrites proxy
           `http://localhost:8000${endpoint}`, // 2. Direct localhost:8000
           `http://127.0.0.1:8000${endpoint}`, // 3. Direct 127.0.0.1:8000
         ];
@@ -107,16 +112,20 @@ class ApiService {
 
     const data: LoginResponse = await response.json();
     this.token = data.access_token;
-    localStorage.setItem(TOKEN_KEY, data.access_token);
-    localStorage.setItem(USER_KEY, data.username);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEY, data.access_token);
+      localStorage.setItem(USER_KEY, data.username);
+    }
     return data;
   }
 
   // Logout
   public logout(): void {
     this.token = null;
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
   }
 
   // Create New Admin Account
@@ -138,6 +147,7 @@ class ApiService {
   // Helper to merge local overrides
   private applyLocalOverrides(list: ApiProjectItem[]): ApiProjectItem[] {
     try {
+      if (typeof window === 'undefined') return list;
       const overridesStr = localStorage.getItem('durozen_project_overrides');
       if (!overridesStr) return list;
       const overrides = JSON.parse(overridesStr);
@@ -196,10 +206,12 @@ class ApiService {
 
     const created: ApiProjectItem = await response.json();
     try {
-      const overridesStr = localStorage.getItem('durozen_project_overrides');
-      const overrides = overridesStr ? JSON.parse(overridesStr) : {};
-      overrides[created.id] = { ...created, ...project };
-      localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
+      if (typeof window !== 'undefined') {
+        const overridesStr = localStorage.getItem('durozen_project_overrides');
+        const overrides = overridesStr ? JSON.parse(overridesStr) : {};
+        overrides[created.id] = { ...created, ...project };
+        localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
+      }
     } catch {}
 
     return created;
@@ -220,10 +232,12 @@ class ApiService {
 
     const updated: ApiProjectItem = await response.json();
     try {
-      const overridesStr = localStorage.getItem('durozen_project_overrides');
-      const overrides = overridesStr ? JSON.parse(overridesStr) : {};
-      overrides[id] = { ...updated, ...project };
-      localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
+      if (typeof window !== 'undefined') {
+        const overridesStr = localStorage.getItem('durozen_project_overrides');
+        const overrides = overridesStr ? JSON.parse(overridesStr) : {};
+        overrides[id] = { ...updated, ...project };
+        localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
+      }
     } catch {}
 
     return updated;
@@ -242,11 +256,13 @@ class ApiService {
     }
 
     try {
-      const overridesStr = localStorage.getItem('durozen_project_overrides');
-      if (overridesStr) {
-        const overrides = JSON.parse(overridesStr);
-        delete overrides[id];
-        localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
+      if (typeof window !== 'undefined') {
+        const overridesStr = localStorage.getItem('durozen_project_overrides');
+        if (overridesStr) {
+          const overrides = JSON.parse(overridesStr);
+          delete overrides[id];
+          localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
+        }
       }
     } catch {}
 
@@ -261,7 +277,7 @@ class ApiService {
     const token = this.getToken();
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const baseOverride = import.meta.env.VITE_API_BASE_URL;
+    const baseOverride = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL);
     const candidates = baseOverride
       ? [`${baseOverride}/api/upload`]
       : [

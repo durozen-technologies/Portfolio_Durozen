@@ -2,8 +2,12 @@
 node_modules/
 build/
 dist/
+.next/
+src_backup_vite/
 coverage/
 .vite/
+AGENTS.md
+*.tsbuildinfo
 
 # Python virtual environments & bytecode
 venv/
