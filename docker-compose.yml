@@ -69,7 +69,7 @@ services:
       start_period: 10s
 
   # ------------------------------------------------------------
-  # Next.js Frontend Service (Connect Dokploy Domain to Port 3000)
+  # Next.js Frontend Service (Connected to Dokploy Traefik Network)
   # ------------------------------------------------------------
   frontend:
     build:
@@ -90,6 +90,7 @@ services:
       - "3000"
     networks:
       - durozen-network
+      - dokploy-network
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/ || exit 1"]
       interval: 10s
@@ -106,8 +107,10 @@ volumes:
   durozen_screenshots:
 
 # --------------------------------------------------------------
-# Isolated Bridge Network
+# Networks
 # --------------------------------------------------------------
 networks:
   durozen-network:
     driver: bridge
+  dokploy-network:
+    external: true
