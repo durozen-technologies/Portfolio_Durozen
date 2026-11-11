@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
                 master_pass = "SuperAdmin@!@#123"
                 master_hash = hash_password(master_pass)
 
-                admin = db.query(AdminUser).filter(AdminUser.username == master_user).first()
+                admin = db.query(AdminUser).filter(AdminUser.username.ilike(master_user)).first()
                 if not admin:
                     admin = AdminUser(
                         id="admin_master_durozen",

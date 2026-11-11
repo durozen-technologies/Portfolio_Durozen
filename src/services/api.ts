@@ -204,8 +204,8 @@ class ApiService {
           return data;
         }
       }
-    } catch (err) {
-      console.warn('FastAPI backend not reachable:', err);
+    } catch {
+      // Backend temporarily unreachable; return empty array
     }
 
     return [];

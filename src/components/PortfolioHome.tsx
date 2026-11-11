@@ -33,9 +33,7 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
           setProjects(data);
         }
       })
-      .catch((err) => {
-        console.warn('Could not load dynamic projects:', err);
-      });
+      .catch(() => {});
 
     return () => {
       isMounted = false;

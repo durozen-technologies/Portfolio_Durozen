@@ -94,19 +94,6 @@ const AdminProjectCardThumbnail: React.FC<{ project: ApiProjectItem }> = ({ proj
     sources.push(localScreenshot);
   }
 
-  if (project.id === 'bridal' && !sources.includes('/screenshots/bridal-makeover.jpg')) {
-    sources.push('/screenshots/bridal-makeover.jpg');
-  } else if (project.id === 'bridal-makeover' && !sources.includes('/screenshots/bridal.jpg')) {
-    sources.push('/screenshots/bridal.jpg');
-  }
-
-  const isMmr = (project.url && project.url.toLowerCase().includes('mmrmotors')) || 
-                (project.domain && project.domain.toLowerCase().includes('mmrmotors')) || 
-                project.name.toLowerCase().includes('mmr motor');
-  if (isMmr && !sources.includes('/assets/projects/mmrmotors_preview.jpg')) {
-    sources.push('/assets/projects/mmrmotors_preview.jpg');
-  }
-
   const currentSource = sources[sourceIndex];
 
   const handleSourceError = () => {
@@ -208,8 +195,7 @@ const AdminProjectRowThumbnail: React.FC<{ project: ApiProjectItem }> = ({ proje
 
   const src = (project.imageUrl && project.imageUrl.trim() !== '')
     ? project.imageUrl.trim()
-    : (rawUrl.toLowerCase().includes('mmrmotors') ? '/assets/projects/mmrmotors_preview.jpg' : '') ||
-      (normalizedUrl ? `https://s0.wp.com/mshots/v1/${encodeURIComponent(normalizedUrl)}?w=200` : '');
+    : `/screenshots/${project.id}.jpg`;
 
   if (err || !src) {
     return (
@@ -1633,20 +1619,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBackToPortfolio, onP
                             <X className="w-3.5 h-3.5" />
                             <span>Remove</span>
                           </button>
-                        </div>
-                      </div>
-                    ) : formUrl ? (
-                      <div className="relative mb-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 h-36 group shadow-xs">
-                        <img 
-                          src={(formUrl.toLowerCase().includes('mmrmotors') ? '/assets/projects/mmrmotors_preview.jpg' : `https://s0.wp.com/mshots/v1/${encodeURIComponent(formUrl.startsWith('http') ? formUrl : `https://${formUrl}`)}?w=800`)}
-                          alt="Automated Website Preview"
-                          className="w-full h-36 object-cover object-top opacity-90"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] font-mono bg-slate-900/80 text-white backdrop-blur-xs border border-white/10">
-                          Auto-Detected Live Preview
                         </div>
                       </div>
                     ) : null}

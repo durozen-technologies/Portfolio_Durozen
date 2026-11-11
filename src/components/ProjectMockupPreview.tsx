@@ -56,19 +56,6 @@ export const ProjectMockupPreview: React.FC<ProjectMockupPreviewProps> = ({
     imageSources.push(localScreenshot);
   }
 
-  // 3. Project ID / Slug Aliases
-  if (project.id === 'bridal' && !imageSources.includes('/screenshots/bridal-makeover.jpg')) {
-    imageSources.push('/screenshots/bridal-makeover.jpg');
-  } else if (project.id === 'bridal-makeover' && !imageSources.includes('/screenshots/bridal.jpg')) {
-    imageSources.push('/screenshots/bridal.jpg');
-  }
-
-  if (project.id === 'mmr-motors' || project.id === 'mmr-motor') {
-    if (!imageSources.includes('/assets/projects/mmrmotors_preview.jpg')) {
-      imageSources.push('/assets/projects/mmrmotors_preview.jpg');
-    }
-  }
-
   const currentImageUrl = imageSources[sourceIndex] || '';
 
   const handleImageError = () => {

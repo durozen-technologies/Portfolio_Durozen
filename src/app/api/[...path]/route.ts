@@ -30,9 +30,15 @@ async function proxyRequest(request: NextRequest) {
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       if (contentType.includes('application/json') || contentType.includes('application/x-www-form-urlencoded')) {
-        body = await request.text();
+        const text = await request.text();
+        if (text && text.trim().length > 0) {
+          body = text;
+        }
       } else {
-        body = await request.arrayBuffer();
+        const buf = await request.arrayBuffer();
+        if (buf && buf.byteLength > 0) {
+          body = buf;
+        }
       }
     }
 

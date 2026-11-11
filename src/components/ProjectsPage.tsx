@@ -29,9 +29,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onNavigate }) => {
           setProjects(data);
         }
       })
-      .catch((err) => {
-        console.warn('Could not load dynamic projects:', err);
-      });
+      .catch(() => {});
 
     return () => {
       isMounted = false;

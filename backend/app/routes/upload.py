@@ -47,8 +47,11 @@ async def upload_image(
         with open(backend_dest, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # Copy to public/uploads
-        shutil.copyfile(backend_dest, public_dest)
+        # Copy to public/uploads if accessible
+        try:
+            shutil.copyfile(backend_dest, public_dest)
+        except Exception:
+            pass
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
