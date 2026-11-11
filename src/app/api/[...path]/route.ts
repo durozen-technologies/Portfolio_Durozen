@@ -33,11 +33,14 @@ async function proxyRequest(request: NextRequest) {
         const text = await request.text();
         if (text && text.trim().length > 0) {
           body = text;
+          const bytes = new TextEncoder().encode(text);
+          requestHeaders.set('content-length', bytes.length.toString());
         }
       } else {
         const buf = await request.arrayBuffer();
         if (buf && buf.byteLength > 0) {
           body = buf;
+          requestHeaders.set('content-length', buf.byteLength.toString());
         }
       }
     }
@@ -50,8 +53,6 @@ async function proxyRequest(request: NextRequest) {
 
     if (body !== undefined) {
       fetchOptions.body = body;
-      // @ts-ignore
-      fetchOptions.duplex = 'half';
     }
 
     const response = await fetch(targetUrl, fetchOptions);

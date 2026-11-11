@@ -1,11 +1,12 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
 from .config import settings
-from .database import engine, Base, SessionLocal
+from .database import engine, Base, SessionLocal, get_db
 from .models import Project
 from .seed_data import seed_default_projects
 from .routes import projects, auth, upload
@@ -134,6 +135,11 @@ def direct_auth_status():
             "hasAdmin": True,
             "totalAdmins": 1
         }
+
+@app.post("/api/auth/login")
+@app.post("/api/auth/login/")
+async def direct_login(request: Request, db: Session = Depends(get_db)):
+    return await auth.login(request, db)
 
 @app.get("/api/health")
 @app.get("/api/health/")

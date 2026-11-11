@@ -77,18 +77,25 @@ async def login(request: Request, db: Session = Depends(get_db)):
 
     try:
         content_type = request.headers.get("content-type", "")
-        if "application/json" in content_type:
-            body = await request.json()
-            username = body.get("username")
-            password = body.get("password")
-        elif "form" in content_type:
+        if "form" in content_type:
             form = await request.form()
             username = form.get("username")
             password = form.get("password")
         else:
-            body = await request.json()
-            username = body.get("username")
-            password = body.get("password")
+            body = None
+            try:
+                body = await request.json()
+            except Exception:
+                try:
+                    import json
+                    raw_bytes = await request.body()
+                    if raw_bytes:
+                        body = json.loads(raw_bytes.decode("utf-8", errors="ignore"))
+                except Exception:
+                    pass
+            if isinstance(body, dict):
+                username = body.get("username")
+                password = body.get("password")
     except Exception:
         pass
 
