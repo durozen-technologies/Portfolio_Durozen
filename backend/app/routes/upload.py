@@ -18,6 +18,7 @@ os.makedirs(BACKEND_UPLOADS_DIR, exist_ok=True)
 os.makedirs(PUBLIC_UPLOADS_DIR, exist_ok=True)
 
 @router.post("")
+@router.post("/")
 async def upload_image(
     file: UploadFile = File(...),
     admin: str = Depends(get_current_admin)

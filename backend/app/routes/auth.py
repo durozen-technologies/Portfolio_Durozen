@@ -26,6 +26,7 @@ def get_auth_status(db: Session = Depends(get_db)):
     }
 
 @router.post("/setup-first-admin", response_model=TokenResponse)
+@router.post("/setup-first-admin/", response_model=TokenResponse)
 async def setup_first_admin(request: Request, db: Session = Depends(get_db)):
     # Parse payload from JSON or Form
     try:
@@ -69,6 +70,7 @@ async def setup_first_admin(request: Request, db: Session = Depends(get_db)):
     )
 
 @router.post("/login", response_model=TokenResponse)
+@router.post("/login/", response_model=TokenResponse)
 async def login(request: Request, db: Session = Depends(get_db)):
     username = None
     password = None
@@ -114,6 +116,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
     )
 
 @router.post("/register-admin", response_model=CreateAdminResponse)
+@router.post("/register-admin/", response_model=CreateAdminResponse)
 def register_admin(
     data: CreateAdminRequest, 
     db: Session = Depends(get_db),

@@ -24,7 +24,11 @@ export async function GET(request: NextRequest) {
       return new NextResponse('File not found', { status: res.status });
     }
     const headers = new Headers(res.headers);
-    return new NextResponse(res.body, { status: 200, headers });
+    headers.delete('content-encoding');
+    headers.delete('content-length');
+    headers.delete('transfer-encoding');
+    const data = await res.arrayBuffer();
+    return new NextResponse(data, { status: 200, headers });
   } catch (err) {
     return new NextResponse('File not found', { status: 404 });
   }

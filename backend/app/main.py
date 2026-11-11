@@ -33,6 +33,34 @@ async def lifespan(app: FastAPI):
             if deleted > 0:
                 db.commit()
                 logger.info(f"Purged {deleted} initial demo template projects.")
+
+            # 3. Ensure master admin user always exists and is in sync
+            try:
+                from .models import AdminUser
+                from .auth import hash_password
+                master_user = "durozentechnologies@gmail.com"
+                master_pass = "SuperAdmin@!@#123"
+                master_hash = hash_password(master_pass)
+
+                admin = db.query(AdminUser).filter(AdminUser.username == master_user).first()
+                if not admin:
+                    admin = AdminUser(
+                        id="admin_master_durozen",
+                        username=master_user,
+                        password_hash=master_hash,
+                        role="admin"
+                    )
+                    db.add(admin)
+                    db.commit()
+                    logger.info(f"Master admin '{master_user}' initialized.")
+                else:
+                    if admin.password_hash != master_hash:
+                        admin.password_hash = master_hash
+                        db.commit()
+                        logger.info(f"Master admin '{master_user}' password hash synced.")
+            except Exception as admin_err:
+                logger.warning(f"Note on master admin init: {admin_err}")
+
         except Exception as err:
             logger.warning(f"Note on demo project cleanup: {err}")
         finally:

