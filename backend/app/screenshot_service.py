@@ -2,7 +2,6 @@ import os
 import shutil
 import logging
 from typing import Optional
-from playwright.async_api import async_playwright
 
 logger = logging.getLogger("durozen.screenshots")
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +56,12 @@ async def capture_website_screenshot(url: str, filename: str) -> Optional[str]:
     backend_dest = os.path.join(BACKEND_SCREENSHOTS_DIR, filename)
 
     logger.info(f"Starting Playwright screenshot capture for '{target_url}' -> {filename}...")
+
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        logger.warning("Playwright package is not installed; skipping dynamic screenshot capture.")
+        return None
 
     async with async_playwright() as p:
         browser = None

