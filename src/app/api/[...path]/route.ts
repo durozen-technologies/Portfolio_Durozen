@@ -13,11 +13,18 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete('host');
   requestHeaders.delete('connection');
+  requestHeaders.delete('content-length');
 
   try {
-    let body: ArrayBuffer | undefined = undefined;
+    let body: any = undefined;
+    const contentType = request.headers.get('content-type') || '';
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
-      body = await request.arrayBuffer();
+      if (contentType.includes('application/json') || contentType.includes('application/x-www-form-urlencoded')) {
+        body = await request.text();
+      } else {
+        body = await request.arrayBuffer();
+      }
     }
 
     const response = await fetch(targetUrl, {

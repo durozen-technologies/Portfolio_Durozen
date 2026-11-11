@@ -123,7 +123,12 @@ class ApiService {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({ detail: 'Failed to create administrator' }));
-      throw new Error(err.detail || 'Setup failed');
+      const msg = typeof err?.detail === 'string' 
+        ? err.detail 
+        : Array.isArray(err?.detail) 
+          ? err.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ') 
+          : 'Setup failed';
+      throw new Error(msg);
     }
 
     const data: LoginResponse = await response.json();
@@ -145,7 +150,12 @@ class ApiService {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({ detail: 'Login failed' }));
-      throw new Error(err.detail || 'Authentication failed');
+      const msg = typeof err?.detail === 'string' 
+        ? err.detail 
+        : Array.isArray(err?.detail) 
+          ? err.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ') 
+          : 'Authentication failed';
+      throw new Error(msg);
     }
 
     const data: LoginResponse = await response.json();
