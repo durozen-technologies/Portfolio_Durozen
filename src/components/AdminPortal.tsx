@@ -230,12 +230,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onBackToPortfolio, onP
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsAuthenticated(api.isAuthenticated());
-    api.getAuthStatus().then((status) => {
-      if (status.needsSetup) {
-        setIsSetupMode(true);
-      }
-    }).catch(() => {});
+    const authed = api.isAuthenticated();
+    setIsAuthenticated(authed);
+    if (!authed) {
+      api.getAuthStatus().then((status) => {
+        if (status.needsSetup) {
+          setIsSetupMode(true);
+        }
+      }).catch(() => {});
+    }
   }, []);
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');

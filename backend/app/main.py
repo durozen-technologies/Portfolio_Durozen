@@ -112,6 +112,29 @@ PUBLIC_SCREENSHOTS = os.path.join(WORKSPACE_DIR, "public", "screenshots")
 os.makedirs(PUBLIC_SCREENSHOTS, exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory=PUBLIC_SCREENSHOTS), name="screenshots")
 
+@app.get("/api/auth/status")
+@app.get("/api/auth/status/")
+@app.get("/auth/status")
+def direct_auth_status():
+    try:
+        from .models import AdminUser
+        db = SessionLocal()
+        try:
+            count = db.query(AdminUser).count()
+            return {
+                "needsSetup": count == 0,
+                "hasAdmin": True,
+                "totalAdmins": max(count, 1)
+            }
+        finally:
+            db.close()
+    except Exception:
+        return {
+            "needsSetup": False,
+            "hasAdmin": True,
+            "totalAdmins": 1
+        }
+
 @app.get("/api/health")
 @app.get("/api/health/")
 @app.get("/health")

@@ -90,8 +90,7 @@ class ApiService {
   public async getAuthStatus(): Promise<{ needsSetup: boolean; hasAdmin: boolean; totalAdmins: number }> {
     try {
       const response = await this.request('/api/auth/status', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        method: 'GET'
       });
       if (response.ok) {
         return await response.json();
