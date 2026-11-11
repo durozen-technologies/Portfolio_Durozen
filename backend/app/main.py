@@ -85,6 +85,8 @@ os.makedirs(PUBLIC_SCREENSHOTS, exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory=PUBLIC_SCREENSHOTS), name="screenshots")
 
 @app.get("/api/health")
+@app.get("/api/health/")
+@app.get("/health")
 def health_check():
     db_connected = False
     try:

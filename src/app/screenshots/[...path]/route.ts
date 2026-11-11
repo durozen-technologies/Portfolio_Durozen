@@ -13,11 +13,10 @@ function getBackendUrl(): string {
   return 'http://backend:8000';
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const resolvedParams = await params;
-  const pathStr = Array.isArray(resolvedParams?.path) ? resolvedParams.path.join('/') : '';
+export async function GET(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
   const backendBase = getBackendUrl();
-  const targetUrl = `${backendBase}/screenshots/${pathStr}`;
+  const targetUrl = `${backendBase}${pathname}`;
 
   try {
     const res = await fetch(targetUrl);

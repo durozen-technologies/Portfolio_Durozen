@@ -43,6 +43,7 @@ def extract_domain(url: str) -> str:
         return url
 
 @router.get("", response_model=List[dict])
+@router.get("/", response_model=List[dict])
 def list_projects(
     category: Optional[str] = Query(None),
     include_inactive: bool = Query(False),

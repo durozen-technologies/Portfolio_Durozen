@@ -13,12 +13,11 @@ function getBackendUrl(): string {
   return 'http://backend:8000';
 }
 
-async function proxyRequest(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const resolvedParams = await params;
-  const pathStr = Array.isArray(resolvedParams?.path) ? resolvedParams.path.join('/') : '';
+async function proxyRequest(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
   const search = request.nextUrl.search || '';
   const backendBase = getBackendUrl();
-  const targetUrl = `${backendBase}/api/${pathStr}${search}`;
+  const targetUrl = `${backendBase}${pathname}${search}`;
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete('host');

@@ -10,6 +10,7 @@ import uuid
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.get("/status")
+@router.get("/status/")
 def get_auth_status(db: Session = Depends(get_db)):
     db_admins_count = db.query(AdminUser).count()
     has_env_admin = bool(
