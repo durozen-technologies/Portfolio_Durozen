@@ -21,12 +21,20 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables verified.")
 
-        # 2. Automatically seed initial 10 projects if empty
+        # 2. Clean up demo template projects to start with clean portfolio
         db = SessionLocal()
         try:
-            count = seed_default_projects(db, force=False)
-            if count > 0:
-                logger.info(f"Database automatically populated with {count} initial DUROZEN projects.")
+            demo_ids = [
+                "makeover", "eye-hospital", "salon", "nurserie-plant", 
+                "resort", "restaurant", "bridal", "mmr-motors", 
+                "eye-care", "scootyy"
+            ]
+            deleted = db.query(Project).filter(Project.id.in_(demo_ids)).delete(synchronize_session=False)
+            if deleted > 0:
+                db.commit()
+                logger.info(f"Purged {deleted} initial demo template projects.")
+        except Exception as err:
+            logger.warning(f"Note on demo project cleanup: {err}")
         finally:
             db.close()
     except Exception as e:

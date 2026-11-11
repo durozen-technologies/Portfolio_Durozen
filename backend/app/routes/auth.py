@@ -9,6 +9,55 @@ from ..config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+@router.get("/status")
+def get_auth_status(db: Session = Depends(get_db)):
+    db_admins_count = db.query(AdminUser).count()
+    has_env_admin = bool(
+        settings.ADMIN_PASSWORD
+        and settings.ADMIN_PASSWORD.strip()
+        and not settings.ADMIN_PASSWORD.startswith("CHANGE_ME")
+    )
+    needs_setup = (db_admins_count == 0 and not has_env_admin)
+    return {
+        "needsSetup": needs_setup,
+        "hasAdmin": (db_admins_count > 0 or has_env_admin),
+        "totalAdmins": db_admins_count
+    }
+
+@router.post("/setup-first-admin", response_model=TokenResponse)
+def setup_first_admin(data: CreateAdminRequest, db: Session = Depends(get_db)):
+    # Security check: only allowed if no admin exists yet
+    if db.query(AdminUser).count() > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An administrator already exists. Please log in."
+        )
+
+    clean_user = data.username.strip()
+    clean_pass = data.password.strip()
+
+    if len(clean_user) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters long")
+    if len(clean_pass) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+
+    new_admin = AdminUser(
+        id=f"admin_{uuid.uuid4().hex[:12]}",
+        username=clean_user,
+        password_hash=hash_password(clean_pass),
+        role="admin"
+    )
+    db.add(new_admin)
+    db.commit()
+    db.refresh(new_admin)
+
+    access_token = create_access_token(data={"sub": clean_user, "role": "admin"})
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        username=clean_user
+    )
+
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     if not verify_admin_credentials(data.username, data.password, db):

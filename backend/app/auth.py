@@ -14,14 +14,7 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
 
 def verify_admin_credentials(username: str, password: str, db=None) -> bool:
-    # 1. Super admin in settings (default)
-    if settings.ADMIN_PASSWORD.strip():
-        user_match = hmac.compare_digest(username.strip(), settings.ADMIN_USERNAME.strip())
-        pass_match = hmac.compare_digest(password.strip(), settings.ADMIN_PASSWORD.strip())
-        if user_match and pass_match:
-            return True
-
-    # 2. Created admin accounts in database
+    # 1. Created admin accounts in database (primary)
     if db is not None:
         try:
             from .models import AdminUser
@@ -32,6 +25,13 @@ def verify_admin_credentials(username: str, password: str, db=None) -> bool:
                     return True
         except Exception:
             pass
+
+    # 2. Super admin in settings (fallback if configured in .env)
+    if settings.ADMIN_PASSWORD and settings.ADMIN_PASSWORD.strip() and not settings.ADMIN_PASSWORD.startswith("CHANGE_ME"):
+        user_match = hmac.compare_digest(username.strip(), settings.ADMIN_USERNAME.strip())
+        pass_match = hmac.compare_digest(password.strip(), settings.ADMIN_PASSWORD.strip())
+        if user_match and pass_match:
+            return True
 
     return False
 

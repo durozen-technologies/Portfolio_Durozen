@@ -270,16 +270,34 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
         </div>
 
         {/* The Project Cards Grid: Exactly 2 columns on Mobile & Tablet, 3 columns on Desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6 lg:gap-8">
-          {filteredProjects.map((project, index) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              index={index}
-              onOpenQuickView={(p) => setQuickViewProject(p)}
-            />
-          ))}
-        </div>
+        {filteredProjects.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6 lg:gap-8">
+            {filteredProjects.map((project, index) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                index={index}
+                onOpenQuickView={(p) => setQuickViewProject(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="py-16 text-center rounded-3xl bg-slate-50 border border-slate-200/60 p-8">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-400">
+              <span className="text-xl">📁</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-800 mb-1">No Projects Added Yet</h3>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mb-5">
+              Your portfolio is clean and ready. Log in to the Admin Portal to add your client showcase projects.
+            </p>
+            <a
+              href="/admin"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all shadow-sm"
+            >
+              Open Admin Portal
+            </a>
+          </div>
+        )}
       </section>
 
       {/* 5. ABOUT US SECTION (Official Company Information) */}

@@ -97,6 +97,44 @@ class ApiService {
     }
   }
 
+  // Check if system requires first-time admin setup
+  public async getAuthStatus(): Promise<{ needsSetup: boolean; hasAdmin: boolean; totalAdmins: number }> {
+    try {
+      const response = await this.fetchWithFallback('/api/auth/status', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return { needsSetup: false, hasAdmin: true, totalAdmins: 1 };
+    } catch {
+      return { needsSetup: false, hasAdmin: true, totalAdmins: 1 };
+    }
+  }
+
+  // Setup first administrator account (when no user exists)
+  public async setupFirstAdmin(username: string, password: string): Promise<LoginResponse> {
+    const response = await this.fetchWithFallback('/api/auth/setup-first-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: 'Failed to create administrator' }));
+      throw new Error(err.detail || 'Setup failed');
+    }
+
+    const data: LoginResponse = await response.json();
+    this.token = data.access_token;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_KEY, data.access_token);
+      localStorage.setItem(USER_KEY, data.username);
+    }
+    return data;
+  }
+
   // Login
   public async login(username: string, password: string): Promise<LoginResponse> {
     const response = await this.fetchWithFallback('/api/auth/login', {

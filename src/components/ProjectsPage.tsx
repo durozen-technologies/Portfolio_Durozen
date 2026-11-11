@@ -121,16 +121,34 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Project Cards Grid: 2 columns on Mobile & Tablet, 3 columns on Desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6 lg:gap-8">
-          {filteredProjects.map((project, index) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              index={index}
-              onOpenQuickView={(p) => setQuickViewProject(p)}
-            />
-          ))}
-        </div>
+        {filteredProjects.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6 lg:gap-8">
+            {filteredProjects.map((project, index) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                index={index}
+                onOpenQuickView={(p) => setQuickViewProject(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center rounded-3xl bg-slate-50 border border-slate-200/60 p-8 my-8">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-400">
+              <FolderKanban className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">No Projects Found</h3>
+            <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+              There are currently no projects in this category. You can add your live project demos via the Admin Portal.
+            </p>
+            <a
+              href="/admin"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all shadow-sm"
+            >
+              Go to Admin Portal
+            </a>
+          </div>
+        )}
       </main>
 
       {/* Shared Footer */}
