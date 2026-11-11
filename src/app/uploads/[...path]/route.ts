@@ -20,3 +20,4 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return new NextResponse('File not found', { status: 404 });
   }
 }
+
