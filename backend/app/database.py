@@ -14,14 +14,14 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-def init_engine():
+def init_database():
     try:
         logger.info(f"Connecting to database: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else DATABASE_URL}")
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("Successfully connected to PostgreSQL database!")
 
-        # Create tables immediately on engine initialization
+        # Create tables
         from . import models
         Base.metadata.create_all(bind=engine)
         logger.info("Database schema verified and tables created.")
@@ -36,8 +36,6 @@ def init_engine():
                 pass
     except Exception as e:
         logger.error(f"PostgreSQL connection or table initialization failed: {e}")
-
-init_engine()
 
 def get_db():
     db = SessionLocal()

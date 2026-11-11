@@ -1,12 +1,11 @@
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
 from .config import settings
-from .database import engine, Base, SessionLocal, get_db
+from .database import engine, Base, SessionLocal, init_database
 from .models import Project
 from .seed_data import seed_default_projects
 from .routes import projects, auth, upload
@@ -16,11 +15,9 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Startup: Create tables if they do not exist
+    # 1. Startup: Initialize schema and tables safely
     try:
-        logger.info("Initializing database schema...")
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables verified.")
+        init_database()
 
         # 2. Clean up demo template projects to start with clean portfolio
         db = SessionLocal()
@@ -112,34 +109,6 @@ WORKSPACE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 PUBLIC_SCREENSHOTS = os.path.join(WORKSPACE_DIR, "public", "screenshots")
 os.makedirs(PUBLIC_SCREENSHOTS, exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory=PUBLIC_SCREENSHOTS), name="screenshots")
-
-@app.get("/api/auth/status")
-@app.get("/api/auth/status/")
-@app.get("/auth/status")
-def direct_auth_status():
-    try:
-        from .models import AdminUser
-        db = SessionLocal()
-        try:
-            count = db.query(AdminUser).count()
-            return {
-                "needsSetup": count == 0,
-                "hasAdmin": True,
-                "totalAdmins": max(count, 1)
-            }
-        finally:
-            db.close()
-    except Exception:
-        return {
-            "needsSetup": False,
-            "hasAdmin": True,
-            "totalAdmins": 1
-        }
-
-@app.post("/api/auth/login")
-@app.post("/api/auth/login/")
-async def direct_login(request: Request, db: Session = Depends(get_db)):
-    return await auth.login(request, db)
 
 @app.get("/api/health")
 @app.get("/api/health/")
