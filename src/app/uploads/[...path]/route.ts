@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const BACKEND_URL = process.env.BACKEND_URL || process.env.DOCKER_BACKEND_URL || 'http://backend:8000';
+function getBackendUrl(): string {
+  if (process.env.DOCKER_BACKEND_URL) {
+    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '');
+  }
+  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '');
+  if (envUrl && !envUrl.includes('127.0.0.1') && !envUrl.includes('localhost')) {
+    return envUrl;
+  }
+  return 'http://backend:8000';
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   const pathStr = Array.isArray(resolvedParams?.path) ? resolvedParams.path.join('/') : '';
-  const targetUrl = `${BACKEND_URL}/uploads/${pathStr}`;
+  const backendBase = getBackendUrl();
+  const targetUrl = `${backendBase}/uploads/${pathStr}`;
 
   try {
     const res = await fetch(targetUrl);
@@ -20,4 +30,5 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return new NextResponse('File not found', { status: 404 });
   }
 }
+
 

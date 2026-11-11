@@ -61,6 +61,7 @@ services:
       - durozen_screenshots:/public/screenshots
     networks:
       - durozen-network
+      - dokploy-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
       interval: 10s
@@ -77,7 +78,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
-        BACKEND_URL: ${DOCKER_BACKEND_URL:-http://backend:8000}
+        BACKEND_URL: http://backend:8000
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -85,7 +86,8 @@ services:
       backend:
         condition: service_healthy
     environment:
-      BACKEND_URL: ${DOCKER_BACKEND_URL:-http://backend:8000}
+      BACKEND_URL: http://backend:8000
+      DOCKER_BACKEND_URL: http://backend:8000
     expose:
       - "3000"
     networks:
