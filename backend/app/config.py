@@ -41,11 +41,16 @@ class Settings:
 
     @property
     def DATABASE_URL(self) -> str:
-        url = self._raw_db_url
+        url = self._raw_db_url or os.getenv("DATABASE_URL", "").strip()
         if not url:
-            raise RuntimeError(
-                "DATABASE_URL is not configured. Set a PostgreSQL connection URL in .env or backend/.env."
-            )
+            # Fallback default for container environment
+            url = "postgresql+psycopg2://postgres:durozen_secret_password_2026@db:5432/durozen_db"
+
+        # If running inside Docker container where database is at 'db:5432', auto-correct localhost/127.0.0.1
+        if os.path.exists("/.dockerenv") or os.getenv("HOSTNAME"):
+            if "@localhost:5432" in url or "@127.0.0.1:5432" in url:
+                url = url.replace("@localhost:5432", "@db:5432").replace("@127.0.0.1:5432", "@db:5432")
+
         if not url.startswith(("postgresql://", "postgresql+psycopg2://", "postgresql+psycopg://")):
             raise RuntimeError(
                 "Invalid DATABASE_URL: only PostgreSQL connections are supported."
