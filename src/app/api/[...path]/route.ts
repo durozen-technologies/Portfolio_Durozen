@@ -36,14 +36,19 @@ async function proxyRequest(request: NextRequest) {
       }
     }
 
-    const response = await fetch(targetUrl, {
+    const fetchOptions: RequestInit = {
       method: request.method,
       headers: requestHeaders,
-      body,
-      // @ts-ignore
-      duplex: 'half',
       cache: 'no-store',
-    });
+    };
+
+    if (body !== undefined) {
+      fetchOptions.body = body;
+      // @ts-ignore
+      fetchOptions.duplex = 'half';
+    }
+
+    const response = await fetch(targetUrl, fetchOptions);
 
     const responseHeaders = new Headers(response.headers);
     responseHeaders.delete('content-encoding');

@@ -25,12 +25,12 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onNavigate }) => {
     let isMounted = true;
     api.getProjects()
       .then((data) => {
-        if (isMounted && data && data.length > 0) {
+        if (isMounted && Array.isArray(data)) {
           setProjects(data);
         }
       })
       .catch((err) => {
-        console.warn('Could not load dynamic projects, using defaults:', err);
+        console.warn('Could not load dynamic projects:', err);
       });
 
     return () => {

@@ -1,6 +1,5 @@
-import { LIVE_PROJECTS, ProjectItem } from '../data/projects';
+import { ProjectItem } from '../data/projects';
 
-const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) || 'http://localhost:8000';
 const TOKEN_KEY = 'durozen_admin_token';
 const USER_KEY = 'durozen_admin_user';
 
@@ -58,33 +57,23 @@ class ApiService {
     };
   }
 
-  private async fetchWithFallback(endpoint: string, options: RequestInit = {}): Promise<Response> {
-    const baseOverride = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL);
-    const candidates = baseOverride 
-      ? [`${baseOverride}${endpoint}`]
-      : [
-          endpoint, // 1. Via Next.js dev server rewrites proxy
-          `http://localhost:8000${endpoint}`, // 2. Direct localhost:8000
-          `http://127.0.0.1:8000${endpoint}`, // 3. Direct 127.0.0.1:8000
-        ];
+  private getBaseUrl(): string {
+    const envBase = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || '';
+    return envBase ? envBase.replace(/\/+$/, '') : '';
+  }
 
-    let lastError: any = null;
-    for (const url of candidates) {
-      try {
-        const response = await fetch(url, options);
-        // If we get an actual HTTP response (even 4xx/5xx from API), return it
-        return response;
-      } catch (err) {
-        lastError = err;
-      }
-    }
-    throw new Error('FastAPI backend is offline. Please make sure the backend is running on port 8000 (run: npm run backend)');
+  private async request(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const base = this.getBaseUrl();
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${base}${cleanEndpoint}`;
+
+    return await fetch(url, options);
   }
 
   // Health check to test backend and DB status
   public async checkHealth(): Promise<HealthResponse | null> {
     try {
-      const response = await this.fetchWithFallback('/api/health', {
+      const response = await this.request('/api/health', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -100,7 +89,7 @@ class ApiService {
   // Check if system requires first-time admin setup
   public async getAuthStatus(): Promise<{ needsSetup: boolean; hasAdmin: boolean; totalAdmins: number }> {
     try {
-      const response = await this.fetchWithFallback('/api/auth/status', {
+      const response = await this.request('/api/auth/status', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -115,7 +104,7 @@ class ApiService {
 
   // Setup first administrator account (when no user exists)
   public async setupFirstAdmin(username: string, password: string): Promise<LoginResponse> {
-    const response = await this.fetchWithFallback('/api/auth/setup-first-admin', {
+    const response = await this.request('/api/auth/setup-first-admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -142,7 +131,7 @@ class ApiService {
 
   // Login
   public async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await this.fetchWithFallback('/api/auth/login', {
+    const response = await this.request('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -178,7 +167,7 @@ class ApiService {
 
   // Create New Admin Account
   public async createAdmin(username: string, password: string): Promise<{ success: boolean; message: string; username: string }> {
-    const response = await this.fetchWithFallback('/api/auth/register-admin', {
+    const response = await this.request('/api/auth/register-admin', {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ username, password })
@@ -192,20 +181,7 @@ class ApiService {
     return await response.json();
   }
 
-  // Helper to merge local overrides
-  private applyLocalOverrides(list: ApiProjectItem[]): ApiProjectItem[] {
-    try {
-      if (typeof window === 'undefined') return list;
-      const overridesStr = localStorage.getItem('durozen_project_overrides');
-      if (!overridesStr) return list;
-      const overrides = JSON.parse(overridesStr);
-      return list.map(item => overrides[item.id] ? { ...item, ...overrides[item.id] } : item);
-    } catch {
-      return list;
-    }
-  }
-
-  // Fetch all projects (with automatic fallback to LIVE_PROJECTS and local cache)
+  // Fetch all projects from database
   public async getProjects(category?: string, includeInactive: boolean = false): Promise<ApiProjectItem[]> {
     try {
       const queryParams = new URLSearchParams();
@@ -217,31 +193,27 @@ class ApiService {
       }
       const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
-      const response = await this.fetchWithFallback(`/api/projects${qs}`, {
+      const response = await this.request(`/api/projects${qs}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-          return this.applyLocalOverrides(data);
+        if (Array.isArray(data)) {
+          return data;
         }
       }
     } catch (err) {
-      console.warn('FastAPI backend not reachable, using local projects fallback:', err);
+      console.warn('FastAPI backend not reachable:', err);
     }
 
-    // Fallback to static live projects if server is offline or empty
-    const baseList = (category && category !== 'All')
-      ? LIVE_PROJECTS.filter(p => p.category === category)
-      : LIVE_PROJECTS;
-    return this.applyLocalOverrides(baseList);
+    return [];
   }
 
   // Create Project
   public async createProject(project: Partial<ApiProjectItem>): Promise<ApiProjectItem> {
-    const response = await this.fetchWithFallback('/api/projects', {
+    const response = await this.request('/api/projects', {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(project)
@@ -252,22 +224,12 @@ class ApiService {
       throw new Error(err.detail || 'Failed to create demo site');
     }
 
-    const created: ApiProjectItem = await response.json();
-    try {
-      if (typeof window !== 'undefined') {
-        const overridesStr = localStorage.getItem('durozen_project_overrides');
-        const overrides = overridesStr ? JSON.parse(overridesStr) : {};
-        overrides[created.id] = { ...created, ...project };
-        localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
-      }
-    } catch {}
-
-    return created;
+    return await response.json();
   }
 
   // Update Project
   public async updateProject(id: string, project: Partial<ApiProjectItem>): Promise<ApiProjectItem> {
-    const response = await this.fetchWithFallback(`/api/projects/${id}`, {
+    const response = await this.request(`/api/projects/${id}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(project)
@@ -278,22 +240,12 @@ class ApiService {
       throw new Error(err.detail || 'Failed to update demo site');
     }
 
-    const updated: ApiProjectItem = await response.json();
-    try {
-      if (typeof window !== 'undefined') {
-        const overridesStr = localStorage.getItem('durozen_project_overrides');
-        const overrides = overridesStr ? JSON.parse(overridesStr) : {};
-        overrides[id] = { ...updated, ...project };
-        localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
-      }
-    } catch {}
-
-    return updated;
+    return await response.json();
   }
 
   // Delete Project
   public async deleteProject(id: string): Promise<boolean> {
-    const response = await this.fetchWithFallback(`/api/projects/${id}`, {
+    const response = await this.request(`/api/projects/${id}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders()
     });
@@ -302,17 +254,6 @@ class ApiService {
       const err = await response.json().catch(() => ({ detail: 'Failed to delete demo site' }));
       throw new Error(err.detail || 'Failed to delete demo site');
     }
-
-    try {
-      if (typeof window !== 'undefined') {
-        const overridesStr = localStorage.getItem('durozen_project_overrides');
-        if (overridesStr) {
-          const overrides = JSON.parse(overridesStr);
-          delete overrides[id];
-          localStorage.setItem('durozen_project_overrides', JSON.stringify(overrides));
-        }
-      }
-    } catch {}
 
     return true;
   }
@@ -325,39 +266,24 @@ class ApiService {
     const token = this.getToken();
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const baseOverride = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL);
-    const candidates = baseOverride
-      ? [`${baseOverride}/api/upload`]
-      : [
-          '/api/upload',
-          'http://localhost:8000/api/upload',
-          'http://127.0.0.1:8000/api/upload'
-        ];
+    const response = await this.request('/api/upload', {
+      method: 'POST',
+      headers,
+      body: formData
+    });
 
-    let lastError: any = null;
-    for (const url of candidates) {
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: formData
-        });
-        if (response.ok) {
-          const data = await response.json();
-          return data.url;
-        }
-        const err = await response.json().catch(() => ({ detail: 'Upload failed' }));
-        throw new Error(err.detail || 'Upload failed');
-      } catch (err) {
-        lastError = err;
-      }
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: 'Upload failed' }));
+      throw new Error(err.detail || 'Upload failed');
     }
-    throw lastError || new Error('Failed to upload image to backend');
+
+    const data = await response.json();
+    return data.url;
   }
 
   // Seed default projects
   public async seedProjects(force: boolean = false): Promise<{ message: string; totalCount: number }> {
-    const response = await this.fetchWithFallback(`/api/projects/seed?force=${force}`, {
+    const response = await this.request(`/api/projects/seed?force=${force}`, {
       method: 'POST',
       headers: this.getAuthHeaders()
     });
@@ -372,4 +298,3 @@ class ApiService {
 }
 
 export const api = new ApiService();
-
