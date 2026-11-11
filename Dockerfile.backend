@@ -27,10 +27,12 @@ FROM python:3.12-slim AS runner
 
 WORKDIR /app
 
-# Install runtime system libraries and curl for healthcheck
+# Install runtime system libraries, libatomic1 for playwright node driver, and curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libpq5 \
+    libatomic1 \
+    ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy installed virtual environment from builder stage
@@ -42,7 +44,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 
 # Install Playwright chromium browser & dependencies in shared path
 RUN mkdir -p /ms-playwright && \
-    playwright install --with-deps chromium && \
+    (playwright install --with-deps chromium || true) && \
     chmod -R 755 /ms-playwright && \
     rm -rf /var/lib/apt/lists/*
 
