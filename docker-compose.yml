@@ -73,6 +73,7 @@ services:
   # Next.js Frontend Service (Dokploy Web Service)
   # ------------------------------------------------------------
   web:
+    image: ${WEB_IMAGE:-durozen-web:latest}
     build:
       context: .
       dockerfile: Dockerfile

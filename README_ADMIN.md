@@ -36,7 +36,7 @@ Visit:
 
 ## 🐳 Docker & Docker Compose Quick Start (Recommended)
 
-Run the entire stack (PostgreSQL database, FastAPI backend, and Vite frontend) with a single command using multistage builder images:
+Run the entire stack (PostgreSQL database, FastAPI backend, and Next.js frontend web service) with a single command using multistage builder images:
 
 ```bash
 # Build and start all services in detached mode
