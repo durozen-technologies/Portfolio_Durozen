@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendCandidateBases } from '../backendUtils';
+import { getVerifiedBackendBase } from '../backendUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,64 +49,41 @@ async function proxyRequest(
     requestHeaders.delete('content-type');
   }
 
-  const bases = getBackendCandidateBases();
-  const candidateUrlBuilders = [
-    (base: string) => `${base}/api/${cleanPath}${search}`,
-  ];
-
-  let lastResponse: Response | null = null;
-  let lastAttemptedUrl = '';
-
-  for (const base of bases) {
-    for (const buildUrl of candidateUrlBuilders) {
-      const targetUrl = buildUrl(base);
-      lastAttemptedUrl = targetUrl;
-
-      try {
-        const response = await fetch(targetUrl, {
-          method: request.method,
-          headers: requestHeaders,
-          body,
-          cache: 'no-store',
-        });
-
-        // If endpoint matched (status is not 404), return the response
-        if (response.status !== 404) {
-          const responseHeaders = new Headers(response.headers);
-          responseHeaders.delete('content-encoding');
-          responseHeaders.delete('transfer-encoding');
-
-          const responseData = await response.arrayBuffer();
-          return new NextResponse(responseData, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: responseHeaders,
-          });
-        }
-
-        lastResponse = response;
-      } catch (err) {
-        // Network error for this candidate base; continue to next candidate
-      }
-    }
+  const base = await getVerifiedBackendBase();
+  if (!base) {
+    return NextResponse.json(
+      { detail: 'Portfolio backend not reachable. Check that the backend container is running.' },
+      { status: 502 }
+    );
   }
 
-  if (lastResponse) {
-    const responseHeaders = new Headers(lastResponse.headers);
+  const targetUrl = `${base}/api/${cleanPath}${search}`;
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: request.method,
+      headers: requestHeaders,
+      body,
+      cache: 'no-store',
+    });
+
+    const responseHeaders = new Headers(response.headers);
     responseHeaders.delete('content-encoding');
     responseHeaders.delete('transfer-encoding');
-    const responseData = await lastResponse.arrayBuffer();
+
+    const responseData = await response.arrayBuffer();
     return new NextResponse(responseData, {
-      status: lastResponse.status,
-      statusText: lastResponse.statusText,
+      status: response.status,
+      statusText: response.statusText,
       headers: responseHeaders,
     });
+  } catch (err) {
+    console.error(`API proxy error forwarding to ${targetUrl}:`, err);
+    return NextResponse.json(
+      { detail: `Could not reach backend service at ${targetUrl}.` },
+      { status: 502 }
+    );
   }
-
-  return NextResponse.json(
-    { detail: `Could not reach backend service at ${lastAttemptedUrl || 'internal backend'}. Ensure backend container is running.` },
-    { status: 502 }
-  );
 }
 
 export const GET = proxyRequest;

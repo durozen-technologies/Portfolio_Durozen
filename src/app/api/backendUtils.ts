@@ -50,15 +50,15 @@ export function getBackendCandidateBases(): string[] {
 
   // 2. Network candidates based on environment
   if (isDocker()) {
-    add('http://backend:8000');
     add('http://durozen-backend:8000');
+    add('http://backend:8000');
     add('http://127.0.0.1:8000');
     add('http://localhost:8000');
   } else {
     add('http://127.0.0.1:8000');
     add('http://localhost:8000');
-    add('http://backend:8000');
     add('http://durozen-backend:8000');
+    add('http://backend:8000');
   }
 
   return candidates;
@@ -66,5 +66,39 @@ export function getBackendCandidateBases(): string[] {
 
 export function getPrimaryBackendUrl(): string {
   const candidates = getBackendCandidateBases();
-  return candidates[0] || (isDocker() ? 'http://backend:8000' : 'http://localhost:8000');
+  return candidates[0] || (isDocker() ? 'http://durozen-backend:8000' : 'http://localhost:8000');
+}
+
+let verifiedBackendBase: string | null = null;
+
+async function isDurozenBackend(base: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${base}/api/health`, {
+      signal: AbortSignal.timeout(2000),
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
+    return typeof data?.service === 'string' && data.service.includes('DUROZEN');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns the first candidate that identifies itself as the DUROZEN API.
+ * The health check prevents requests (including admin credentials) from being
+ * sent to another stack that shares the Docker network under a generic alias.
+ */
+export async function getVerifiedBackendBase(): Promise<string | null> {
+  if (verifiedBackendBase) return verifiedBackendBase;
+
+  for (const base of getBackendCandidateBases()) {
+    if (await isDurozenBackend(base)) {
+      verifiedBackendBase = base;
+      return base;
+    }
+  }
+  return null;
 }

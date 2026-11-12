@@ -62,12 +62,10 @@ services:
     networks:
       durozen-network:
         aliases:
-          - backend
-          - api
+          - durozen-backend
       dokploy-network:
         aliases:
-          - backend
-          - api
+          - durozen-backend
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
       interval: 10s
@@ -85,18 +83,16 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
-        BACKEND_URL: http://backend:8000
+        BACKEND_URL: http://durozen-backend:8000
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     depends_on:
       backend:
         condition: service_healthy
-    links:
-      - backend
     environment:
-      BACKEND_URL: http://backend:8000
-      DOCKER_BACKEND_URL: http://backend:8000
+      BACKEND_URL: http://durozen-backend:8000
+      DOCKER_BACKEND_URL: http://durozen-backend:8000
       DOCKER_CONTAINER: "true"
     # Do NOT use "ports:" here
     # Optional: "expose:" only documents the port internally for other containers

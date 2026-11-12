@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendCandidateBases } from '../../api/backendUtils';
+import { getVerifiedBackendBase } from '../../api/backendUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,10 +25,10 @@ export async function GET(
 
   const cleanPath = pathString.replace(/^\/+/, '');
   const search = request.nextUrl.search || '';
-  const bases = getBackendCandidateBases();
+  const base = await getVerifiedBackendBase();
+  const targetUrl = base ? `${base}/screenshots/${cleanPath}${search}` : null;
 
-  for (const base of bases) {
-    const targetUrl = `${base}/screenshots/${cleanPath}${search}`;
+  if (targetUrl) {
     try {
       const res = await fetch(targetUrl);
       if (res.ok) {
@@ -40,7 +40,7 @@ export async function GET(
         return new NextResponse(data, { status: 200, headers });
       }
     } catch {
-      // Try next candidate base
+      // fall through to 404
     }
   }
 

@@ -56,7 +56,7 @@ docker compose down
 | Service | Service / Alias Name | Host Port | Internal Port | Technology |
 | :--- | :--- | :--- | :--- | :--- |
 | **Frontend / Web** | `web` (alias: `frontend`) | Dokploy Traefik / None | `3000` | Next.js Standalone (Multistage) |
-| **Backend** | `backend` | Internal | `8000` | Python 3.12 + FastAPI + Playwright (Multistage) |
+| **Backend** | `backend` (alias: `durozen-backend`) | Internal | `8000` | Python 3.12 + FastAPI + Playwright (Multistage) |
 | **Database** | `db` | Internal | `5432` | PostgreSQL 16 Alpine (Multistage) |
 
 ---

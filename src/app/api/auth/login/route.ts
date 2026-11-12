@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendCandidateBases } from '../../backendUtils';
+import { getVerifiedBackendBase } from '../../backendUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,54 +73,30 @@ export async function POST(request: NextRequest) {
       'Accept': 'application/json',
     };
 
-    const bases = getBackendCandidateBases();
-    const candidatePaths = ['/api/auth/login'];
-
-    let lastResponse: Response | null = null;
-    let lastError: any = null;
-
-    for (const base of bases) {
-      for (const path of candidatePaths) {
-        const targetUrl = `${base}${path}`;
-        try {
-          const res = await fetch(targetUrl, {
-            method: 'POST',
-            headers,
-            body: payload,
-            cache: 'no-store',
-          });
-
-          // If endpoint was found (success or auth error like 401/400), return immediately
-          if (res.status !== 404) {
-            const data = await res.json().catch(() => null);
-            if (!res.ok) {
-              const errorMsg = data?.detail || 'Authentication failed';
-              return NextResponse.json(
-                { detail: errorMsg },
-                { status: res.status }
-              );
-            }
-            return NextResponse.json(data, { status: 200 });
-          }
-
-          lastResponse = res;
-        } catch (err) {
-          lastError = err;
-          // Continue to next candidate endpoint or base
-        }
-      }
+    const base = await getVerifiedBackendBase();
+    if (!base) {
+      console.error('No verified DUROZEN backend found among internal candidates.');
+      return NextResponse.json(
+        { detail: 'Authentication service unavailable: portfolio backend not reachable.' },
+        { status: 502 }
+      );
     }
 
-    if (lastResponse && lastResponse.status !== 404) {
-      const data = await lastResponse.json().catch(() => null);
-      return NextResponse.json(data || { detail: 'Authentication failed' }, { status: lastResponse.status });
-    }
+    const res = await fetch(`${base}/api/auth/login`, {
+      method: 'POST',
+      headers,
+      body: payload,
+      cache: 'no-store',
+    });
 
-    console.error('All backend login candidate attempts failed. Last error:', lastError);
-    return NextResponse.json(
-      { detail: 'Authentication service temporarily unreachable. Ensure backend container is running.' },
-      { status: 502 }
-    );
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      return NextResponse.json(
+        { detail: data?.detail || 'Authentication failed' },
+        { status: res.status }
+      );
+    }
+    return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
     console.error('Login proxy critical error:', error);
     return NextResponse.json(
