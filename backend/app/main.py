@@ -63,17 +63,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Robust API Routing: mount at /api, /api/v1, and root level to ensure
-# complete compatibility with all reverse proxy configurations, whether upstream
-# proxies preserve /api, rewrite /api, or route directly to /auth, /projects, etc.
-app.include_router(api_router, prefix="/api")
-app.include_router(api_router, prefix="/api/v1")
-app.include_router(api_router, prefix="")
+# Single canonical prefix. Trailing slashes are handled by Starlette's
+# redirect_slashes, so each endpoint is registered exactly once.
+app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
-if settings.API_V1_PREFIX not in ("", "/api", "/api/v1"):
-    app.include_router(api_router, prefix=settings.API_V1_PREFIX)
-
-# Also expose /health at root level
+# Also expose /health at root level for external monitors
 app.include_router(health_router)
 
 # Mount Static Uploads directory

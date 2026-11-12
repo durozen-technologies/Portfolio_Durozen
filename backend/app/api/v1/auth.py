@@ -133,18 +133,12 @@ async def _extract_credentials(request: Request) -> tuple[str, str]:
 
 
 @router.get("/status", response_model=AdminStatusResponse)
-@router.get("/status/", response_model=AdminStatusResponse)
 def get_auth_status(db: Session = Depends(get_db)):
     return AuthService.get_admin_status(db)
 
 
 @router.post(
     "/setup-first-admin",
-    response_model=TokenResponse,
-    openapi_extra=AUTH_CREDENTIALS_OPENAPI_EXTRA,
-)
-@router.post(
-    "/setup-first-admin/",
     response_model=TokenResponse,
     openapi_extra=AUTH_CREDENTIALS_OPENAPI_EXTRA,
 )
@@ -169,11 +163,6 @@ async def setup_first_admin(
 
 @router.post(
     "/login",
-    response_model=TokenResponse,
-    openapi_extra=AUTH_CREDENTIALS_OPENAPI_EXTRA,
-)
-@router.post(
-    "/login/",
     response_model=TokenResponse,
     openapi_extra=AUTH_CREDENTIALS_OPENAPI_EXTRA,
 )
@@ -206,7 +195,6 @@ async def login(
 
 
 @router.post("/register-admin", response_model=CreateAdminResponse)
-@router.post("/register-admin/", response_model=CreateAdminResponse)
 def register_admin(
     data: CreateAdminRequest,
     db: Session = Depends(get_db),
@@ -224,7 +212,6 @@ def register_admin(
 
 
 @router.get("/me", response_model=AdminProfileResponse)
-@router.get("/me/", response_model=AdminProfileResponse)
 def get_me(username: str = Depends(get_current_admin)):
     return AdminProfileResponse(
         authenticated=True,

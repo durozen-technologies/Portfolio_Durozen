@@ -13,7 +13,6 @@ MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB
 
 
 @router.post("", response_model=UploadResponse)
-@router.post("/", response_model=UploadResponse)
 async def upload_image(
     file: UploadFile = File(...),
     admin: str = Depends(get_current_admin),

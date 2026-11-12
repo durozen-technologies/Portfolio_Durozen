@@ -7,7 +7,6 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/health", response_model=HealthResponse)
-@router.get("/health/", response_model=HealthResponse)
 def health_check():
     connected = is_database_connected()
     db_type = "sqlite" if settings.is_sqlite else "postgresql"

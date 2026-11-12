@@ -71,14 +71,14 @@ def test_full_backend_suite():
         assert "databaseType" in data
         print("   [PASS] /api/health returned healthy status")
 
-        r_v1 = client.get("/api/v1/health")
-        assert r_v1.status_code == 200
-        assert r_v1.json()["status"] == "healthy"
-        print("   [PASS] /api/v1/health returned healthy status")
+        r_slash_health = client.get("/api/health/")
+        assert r_slash_health.status_code == 200
+        assert r_slash_health.json()["status"] == "healthy"
+        print("   [PASS] Trailing-slash redirect for /api/health working")
 
         r_root_health = client.get("/health")
         assert r_root_health.status_code == 200
-        print("   [PASS] Root /health endpoint alias working")
+        print("   [PASS] Root /health endpoint working")
 
         # 2. Auth status when empty
         print("\n2. Testing GET /api/auth/status...")
@@ -110,14 +110,11 @@ def test_full_backend_suite():
         assert auth_status_after["needsSetup"] is False
         assert auth_status_after["hasAdmin"] is True
         assert auth_status_after["totalAdmins"] == 1
-        # Verify root-level and trailing slash aliases for auth status
-        r_root_status = client.get("/auth/status")
-        assert r_root_status.status_code == 200
-        r_slash_status = client.get("/api/auth/status/")
-        assert r_slash_status.status_code == 200
-        r_v1_status = client.get("/api/v1/auth/status")
-        assert r_v1_status.status_code == 200
-        print("   [PASS] Root, v1, and trailing-slash aliases for /api/auth/status working")
+        # Trailing slashes are redirected; only the canonical /api prefix is registered
+        assert client.get("/api/auth/status/").status_code == 200
+        assert client.get("/api/v1/auth/status").status_code == 404
+        assert client.get("/auth/status").status_code == 404
+        print("   [PASS] Canonical /api/auth/status only, trailing slash redirected")
 
         # 4. Attempt setup again (must be blocked)
         r_blocked = client.post("/api/auth/setup-first-admin", json={"username": "hacker", "password": "password123"})
@@ -129,14 +126,11 @@ def test_full_backend_suite():
 
         # 5. Login verification
         print("\n4. Testing POST /api/auth/login...")
-        # Root, v1, and trailing-slash login aliases
-        r_root_login = client.post("/auth/login", json=admin_creds)
-        assert r_root_login.status_code == 200
-        r_slash_login = client.post("/api/auth/login/", json=admin_creds)
-        assert r_slash_login.status_code == 200
-        r_v1_login = client.post("/api/v1/auth/login", json=admin_creds)
-        assert r_v1_login.status_code == 200
-        print("   [PASS] Root, v1, and trailing-slash aliases for /api/auth/login working")
+        # Trailing slashes are redirected; only the canonical /api prefix is registered
+        assert client.post("/api/auth/login/", json=admin_creds).status_code == 200
+        assert client.post("/api/v1/auth/login", json=admin_creds).status_code == 404
+        assert client.post("/auth/login", json=admin_creds).status_code == 404
+        print("   [PASS] Canonical /api/auth/login only, trailing slash redirected")
 
         # Correct credentials (Form Data)
         r_form_login = client.post("/api/auth/login", data=admin_creds)
