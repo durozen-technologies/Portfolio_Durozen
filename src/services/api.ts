@@ -59,7 +59,8 @@ class ApiService {
 
   private getBaseUrl(): string {
     const envBase = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || '';
-    return envBase ? envBase.replace(/\/+$/, '') : '';
+    // Normalize to origin: the API prefix below is always /api
+    return envBase ? envBase.trim().replace(/\/+$/, '').replace(/\/api(\/v1)?$/, '') : '';
   }
 
   private async request(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -67,7 +68,16 @@ class ApiService {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${base}${cleanEndpoint}`;
 
-    return await fetch(url, options);
+    // Ensure headers include Accept: application/json if not set
+    const headers = new Headers(options.headers || {});
+    if (!headers.has('Accept')) {
+      headers.set('Accept', 'application/json');
+    }
+
+    return await fetch(url, {
+      ...options,
+      headers,
+    });
   }
 
   // Health check to test backend and DB status
@@ -90,8 +100,10 @@ class ApiService {
   public async getAuthStatus(): Promise<{ needsSetup: boolean; hasAdmin: boolean; totalAdmins: number }> {
     try {
       const response = await this.request('/api/auth/status', {
-        method: 'GET'
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
       });
+
       if (response.ok) {
         return await response.json();
       }
@@ -103,10 +115,16 @@ class ApiService {
 
   // Setup first administrator account (when no user exists)
   public async setupFirstAdmin(username: string, password: string): Promise<LoginResponse> {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    const body = JSON.stringify({ username, password });
+
     const response = await this.request('/api/auth/setup-first-admin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      headers,
+      body,
     });
 
     if (!response.ok) {
@@ -130,11 +148,37 @@ class ApiService {
 
   // Login
   public async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await this.request('/api/auth/login', {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    const body = JSON.stringify({ username, password });
+
+    let response = await this.request('/api/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      headers,
+      body,
     });
+
+    // Fallback across trailing slash and legacy/direct route aliases if 404 encountered
+    if (response.status === 404) {
+      const fallbacks = ['/api/auth/login/', '/auth/login', '/auth/login/', '/api/v1/auth/login'];
+      for (const fb of fallbacks) {
+        try {
+          const fbRes = await this.request(fb, {
+            method: 'POST',
+            headers,
+            body,
+          });
+          if (fbRes.status !== 404) {
+            response = fbRes;
+            break;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
+    }
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({ detail: 'Login failed' }));

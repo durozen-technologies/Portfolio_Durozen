@@ -1,41 +1,7 @@
-import fs from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendCandidateBases } from '../backendUtils';
 
 export const dynamic = 'force-dynamic';
-
-function isDocker(): boolean {
-  try {
-    if (fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER) {
-      return true;
-    }
-    if (fs.existsSync('/proc/1/cgroup')) {
-      const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
-      if (cgroup.includes('docker') || cgroup.includes('containerd') || cgroup.includes('kubepods')) {
-        return true;
-      }
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-function getBackendUrl(): string {
-  if (process.env.DOCKER_BACKEND_URL) {
-    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
-  }
-  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '').replace(/\/api\/?$/, '');
-  const inContainer = isDocker();
-
-  if (envUrl) {
-    if (inContainer && (envUrl.includes('127.0.0.1') || envUrl.includes('localhost'))) {
-      return 'http://backend:8000';
-    }
-    return envUrl;
-  }
-
-  return inContainer ? 'http://backend:8000' : 'http://localhost:8000';
-}
 
 async function proxyRequest(
   request: NextRequest,
@@ -60,9 +26,9 @@ async function proxyRequest(
     pathString = rawPath.replace(/^\/?api\/?/, '');
   }
 
+  // Clean path to prevent duplicate /api or extra slashes
+  const cleanPath = pathString.replace(/^\/+|\/+$/g, '').replace(/^api\/?/, '');
   const search = request.nextUrl.search || '';
-  const backendBase = getBackendUrl();
-  const targetUrl = `${backendBase}/api/${pathString}${search}`;
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete('host');
@@ -83,50 +49,64 @@ async function proxyRequest(
     requestHeaders.delete('content-type');
   }
 
-  try {
-    let response = await fetch(targetUrl, {
-      method: request.method,
-      headers: requestHeaders,
-      body,
-      cache: 'no-store',
-    });
+  const bases = getBackendCandidateBases();
+  const candidateUrlBuilders = [
+    (base: string) => `${base}/api/${cleanPath}${search}`,
+  ];
 
-    // If backend returned 404, try direct root endpoint without /api prefix
-    if (response.status === 404 && pathString) {
-      const rootUrl = `${backendBase}/${pathString}${search}`;
+  let lastResponse: Response | null = null;
+  let lastAttemptedUrl = '';
+
+  for (const base of bases) {
+    for (const buildUrl of candidateUrlBuilders) {
+      const targetUrl = buildUrl(base);
+      lastAttemptedUrl = targetUrl;
+
       try {
-        const fallbackResponse = await fetch(rootUrl, {
+        const response = await fetch(targetUrl, {
           method: request.method,
           headers: requestHeaders,
           body,
           cache: 'no-store',
         });
-        if (fallbackResponse.status !== 404) {
-          response = fallbackResponse;
+
+        // If endpoint matched (status is not 404), return the response
+        if (response.status !== 404) {
+          const responseHeaders = new Headers(response.headers);
+          responseHeaders.delete('content-encoding');
+          responseHeaders.delete('transfer-encoding');
+
+          const responseData = await response.arrayBuffer();
+          return new NextResponse(responseData, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders,
+          });
         }
-      } catch {
-        // preserve original response
+
+        lastResponse = response;
+      } catch (err) {
+        // Network error for this candidate base; continue to next candidate
       }
     }
+  }
 
-    const responseHeaders = new Headers(response.headers);
+  if (lastResponse) {
+    const responseHeaders = new Headers(lastResponse.headers);
     responseHeaders.delete('content-encoding');
     responseHeaders.delete('transfer-encoding');
-
-    const responseData = await response.arrayBuffer();
-
+    const responseData = await lastResponse.arrayBuffer();
     return new NextResponse(responseData, {
-      status: response.status,
-      statusText: response.statusText,
+      status: lastResponse.status,
+      statusText: lastResponse.statusText,
       headers: responseHeaders,
     });
-  } catch (error: any) {
-    console.error(`API Proxy error forwarding to ${targetUrl}:`, error);
-    return NextResponse.json(
-      { detail: `Could not reach backend service at ${targetUrl}. Ensure backend container is running.` },
-      { status: 502 }
-    );
   }
+
+  return NextResponse.json(
+    { detail: `Could not reach backend service at ${lastAttemptedUrl || 'internal backend'}. Ensure backend container is running.` },
+    { status: 502 }
+  );
 }
 
 export const GET = proxyRequest;

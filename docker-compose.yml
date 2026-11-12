@@ -60,8 +60,14 @@ services:
       - durozen_uploads:/app/uploads
       - durozen_screenshots:/public/screenshots
     networks:
-      - durozen-network
-      - dokploy-network
+      durozen-network:
+        aliases:
+          - backend
+          - api
+      dokploy-network:
+        aliases:
+          - backend
+          - api
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
       interval: 10s

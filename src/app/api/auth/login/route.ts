@@ -1,49 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
+import { getBackendCandidateBases } from '../../backendUtils';
 
 export const dynamic = 'force-dynamic';
 
-function isDocker(): boolean {
-  try {
-    if (fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER) {
-      return true;
-    }
-    if (fs.existsSync('/proc/1/cgroup')) {
-      const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
-      if (cgroup.includes('docker') || cgroup.includes('containerd') || cgroup.includes('kubepods')) {
-        return true;
+async function extractCredentials(request: NextRequest): Promise<{ username: string; password: string }> {
+  let username = '';
+  let password = '';
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    try {
+      const body = await request.json();
+      if (body && typeof body === 'object') {
+        username = String(body.username || body.user || body.email || '').trim();
+        password = String(body.password || body.pass || '').trim();
       }
+    } catch {
+      // fallback
     }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-function getBackendUrl(): string {
-  if (process.env.DOCKER_BACKEND_URL) {
-    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
-  }
-  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '').replace(/\/api\/?$/, '');
-  const inContainer = isDocker();
-
-  if (envUrl) {
-    if (inContainer && (envUrl.includes('127.0.0.1') || envUrl.includes('localhost'))) {
-      return 'http://backend:8000';
+  } else if (contentType.includes('form') || contentType.includes('urlencoded')) {
+    try {
+      const formData = await request.formData();
+      username = String(formData.get('username') || formData.get('user') || formData.get('email') || '').trim();
+      password = String(formData.get('password') || formData.get('pass') || '').trim();
+    } catch {
+      // fallback
     }
-    return envUrl;
   }
 
-  return inContainer ? 'http://backend:8000' : 'http://localhost:8000';
+  // Universal fallback: try parsing body text
+  if (!username && !password) {
+    try {
+      const text = await request.text();
+      if (text) {
+        try {
+          const data = JSON.parse(text);
+          if (data && typeof data === 'object') {
+            username = String(data.username || data.user || data.email || '').trim();
+            password = String(data.password || data.pass || '').trim();
+          }
+        } catch {
+          const params = new URLSearchParams(text);
+          username = String(params.get('username') || params.get('user') || params.get('email') || '').trim();
+          password = String(params.get('password') || params.get('pass') || '').trim();
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  return { username, password };
 }
 
 export async function POST(request: NextRequest) {
-  const backendBase = getBackendUrl();
-
   try {
-    const body = await request.json().catch(() => ({}));
-    const username = (body.username || '').trim();
-    const password = (body.password || '').trim();
+    const { username, password } = await extractCredentials(request);
 
     if (!username || !password) {
       return NextResponse.json(
@@ -61,42 +73,59 @@ export async function POST(request: NextRequest) {
       'Accept': 'application/json',
     };
 
-    // 1. Try standard /api/auth/login
-    const primaryUrl = `${backendBase}/api/auth/login`;
-    let res = await fetch(primaryUrl, {
-      method: 'POST',
-      headers,
-      body: payload,
-      cache: 'no-store',
-    });
+    const bases = getBackendCandidateBases();
+    const candidatePaths = ['/api/auth/login'];
 
-    // 2. Fallback to /auth/login if backend route or proxy stripped /api
-    if (res.status === 404) {
-      const fallbackUrl = `${backendBase}/auth/login`;
-      res = await fetch(fallbackUrl, {
-        method: 'POST',
-        headers,
-        body: payload,
-        cache: 'no-store',
-      });
+    let lastResponse: Response | null = null;
+    let lastError: any = null;
+
+    for (const base of bases) {
+      for (const path of candidatePaths) {
+        const targetUrl = `${base}${path}`;
+        try {
+          const res = await fetch(targetUrl, {
+            method: 'POST',
+            headers,
+            body: payload,
+            cache: 'no-store',
+          });
+
+          // If endpoint was found (success or auth error like 401/400), return immediately
+          if (res.status !== 404) {
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+              const errorMsg = data?.detail || 'Authentication failed';
+              return NextResponse.json(
+                { detail: errorMsg },
+                { status: res.status }
+              );
+            }
+            return NextResponse.json(data, { status: 200 });
+          }
+
+          lastResponse = res;
+        } catch (err) {
+          lastError = err;
+          // Continue to next candidate endpoint or base
+        }
+      }
     }
 
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok) {
-      const errorMsg = data?.detail || 'Authentication failed';
-      return NextResponse.json(
-        { detail: errorMsg },
-        { status: res.status }
-      );
+    if (lastResponse && lastResponse.status !== 404) {
+      const data = await lastResponse.json().catch(() => null);
+      return NextResponse.json(data || { detail: 'Authentication failed' }, { status: lastResponse.status });
     }
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
-    console.error('Login proxy error:', error);
+    console.error('All backend login candidate attempts failed. Last error:', lastError);
     return NextResponse.json(
       { detail: 'Authentication service temporarily unreachable. Ensure backend container is running.' },
       { status: 502 }
+    );
+  } catch (error: any) {
+    console.error('Login proxy critical error:', error);
+    return NextResponse.json(
+      { detail: 'Internal authentication proxy error' },
+      { status: 500 }
     );
   }
 }

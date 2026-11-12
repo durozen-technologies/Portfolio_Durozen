@@ -44,6 +44,7 @@ Thumbs.db
 # Test artifacts
 *test_thumbnail*
 *zenith-ai-hyperdrive*
+test_*.ts
 public/assets/brand/
 
 # Environment Variables
