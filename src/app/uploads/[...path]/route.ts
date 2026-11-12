@@ -34,8 +34,9 @@ export async function GET(
 ) {
   const { path } = await context.params;
   const pathString = Array.isArray(path) ? path.join('/') : '';
+  const search = request.nextUrl.search || '';
   const backendBase = getBackendUrl();
-  const targetUrl = `${backendBase}/uploads/${pathString}`;
+  const targetUrl = `${backendBase}/uploads/${pathString}${search}`;
 
   try {
     const res = await fetch(targetUrl);

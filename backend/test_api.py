@@ -71,6 +71,11 @@ def test_full_backend_suite():
         assert "databaseType" in data
         print("   [PASS] /api/health returned healthy status")
 
+        r_v1 = client.get("/api/v1/health")
+        assert r_v1.status_code == 200
+        assert r_v1.json()["status"] == "healthy"
+        print("   [PASS] /api/v1/health returned healthy status")
+
         r_root_health = client.get("/health")
         assert r_root_health.status_code == 200
         print("   [PASS] Root /health endpoint alias working")

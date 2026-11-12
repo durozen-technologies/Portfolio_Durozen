@@ -76,7 +76,7 @@ class Settings(BaseSettings):
                 url = os.getenv("LOCAL_DATABASE_URL", f"sqlite:///{sqlite_path}")
 
         # Docker container host adjustment
-        if os.path.exists("/.dockerenv"):
+        if os.path.exists("/.dockerenv") or os.getenv("DOCKER_CONTAINER"):
             if "@localhost:5432" in url or "@127.0.0.1:5432" in url:
                 url = url.replace("@localhost:5432", "@db:5432").replace("@127.0.0.1:5432", "@db:5432")
 

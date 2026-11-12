@@ -66,6 +66,10 @@ app.add_middleware(
 # Include API Router under /api prefix
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+# Also expose under /api/v1 prefix for explicit v1 API routing
+if settings.API_V1_PREFIX != "/api/v1":
+    app.include_router(api_router, prefix="/api/v1")
+
 # Also expose /health at root level
 app.include_router(health_router)
 
