@@ -57,18 +57,21 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origin_regex=r"^https?://([a-zA-Z0-9.-]+\.)?durozen\.(in|com)(:\d+)?$|^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API Router under /api prefix
-app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+# Robust API Routing: mount at /api, /api/v1, and root level to ensure
+# complete compatibility with all reverse proxy configurations, whether upstream
+# proxies preserve /api, rewrite /api, or route directly to /auth, /projects, etc.
+app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix="")
 
-# Also expose under /api/v1 prefix for explicit v1 API routing
-if settings.API_V1_PREFIX != "/api/v1":
-    app.include_router(api_router, prefix="/api/v1")
+if settings.API_V1_PREFIX not in ("", "/api", "/api/v1"):
+    app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 # Also expose /health at root level
 app.include_router(health_router)

@@ -5,7 +5,16 @@ export const dynamic = 'force-dynamic';
 
 function isDocker(): boolean {
   try {
-    return fs.existsSync('/.dockerenv') || Boolean(process.env.DOCKER_CONTAINER);
+    if (fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER) {
+      return true;
+    }
+    if (fs.existsSync('/proc/1/cgroup')) {
+      const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
+      if (cgroup.includes('docker') || cgroup.includes('containerd') || cgroup.includes('kubepods')) {
+        return true;
+      }
+    }
+    return false;
   } catch {
     return false;
   }
@@ -13,9 +22,9 @@ function isDocker(): boolean {
 
 function getBackendUrl(): string {
   if (process.env.DOCKER_BACKEND_URL) {
-    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '');
+    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
   }
-  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '');
+  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '').replace(/\/api\/?$/, '');
   const inContainer = isDocker();
 
   if (envUrl) {
@@ -30,10 +39,27 @@ function getBackendUrl(): string {
 
 async function proxyRequest(
   request: NextRequest,
-  context: { params: Promise<{ path?: string[] }> }
+  context: { params?: Promise<{ path?: string[] }> }
 ) {
-  const { path } = await context.params;
-  const pathString = Array.isArray(path) ? path.join('/') : '';
+  // Determine relative API path
+  let pathString = '';
+  if (context?.params) {
+    try {
+      const resolved = await context.params;
+      if (Array.isArray(resolved?.path)) {
+        pathString = resolved.path.join('/');
+      }
+    } catch {
+      // fallback to pathname parsing
+    }
+  }
+
+  // Robust fallback: parse from nextUrl pathname
+  if (!pathString) {
+    const rawPath = request.nextUrl.pathname;
+    pathString = rawPath.replace(/^\/?api\/?/, '');
+  }
+
   const search = request.nextUrl.search || '';
   const backendBase = getBackendUrl();
   const targetUrl = `${backendBase}/api/${pathString}${search}`;
@@ -58,12 +84,30 @@ async function proxyRequest(
   }
 
   try {
-    const response = await fetch(targetUrl, {
+    let response = await fetch(targetUrl, {
       method: request.method,
       headers: requestHeaders,
       body,
       cache: 'no-store',
     });
+
+    // If backend returned 404, try direct root endpoint without /api prefix
+    if (response.status === 404 && pathString) {
+      const rootUrl = `${backendBase}/${pathString}${search}`;
+      try {
+        const fallbackResponse = await fetch(rootUrl, {
+          method: request.method,
+          headers: requestHeaders,
+          body,
+          cache: 'no-store',
+        });
+        if (fallbackResponse.status !== 404) {
+          response = fallbackResponse;
+        }
+      } catch {
+        // preserve original response
+      }
+    }
 
     const responseHeaders = new Headers(response.headers);
     responseHeaders.delete('content-encoding');

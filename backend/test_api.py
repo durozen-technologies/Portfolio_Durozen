@@ -110,7 +110,14 @@ def test_full_backend_suite():
         assert auth_status_after["needsSetup"] is False
         assert auth_status_after["hasAdmin"] is True
         assert auth_status_after["totalAdmins"] == 1
-        print("   [PASS] Auth status correctly updated to needsSetup=False after first admin creation")
+        # Verify root-level and trailing slash aliases for auth status
+        r_root_status = client.get("/auth/status")
+        assert r_root_status.status_code == 200
+        r_slash_status = client.get("/api/auth/status/")
+        assert r_slash_status.status_code == 200
+        r_v1_status = client.get("/api/v1/auth/status")
+        assert r_v1_status.status_code == 200
+        print("   [PASS] Root, v1, and trailing-slash aliases for /api/auth/status working")
 
         # 4. Attempt setup again (must be blocked)
         r_blocked = client.post("/api/auth/setup-first-admin", json={"username": "hacker", "password": "password123"})
@@ -122,11 +129,14 @@ def test_full_backend_suite():
 
         # 5. Login verification
         print("\n4. Testing POST /api/auth/login...")
-        # Correct credentials (JSON)
-        r_login = client.post("/api/auth/login", json=admin_creds)
-        assert r_login.status_code == 200
-        assert "access_token" in r_login.json()
-        print("   [PASS] Successful login with valid credentials (JSON)")
+        # Root, v1, and trailing-slash login aliases
+        r_root_login = client.post("/auth/login", json=admin_creds)
+        assert r_root_login.status_code == 200
+        r_slash_login = client.post("/api/auth/login/", json=admin_creds)
+        assert r_slash_login.status_code == 200
+        r_v1_login = client.post("/api/v1/auth/login", json=admin_creds)
+        assert r_v1_login.status_code == 200
+        print("   [PASS] Root, v1, and trailing-slash aliases for /api/auth/login working")
 
         # Correct credentials (Form Data)
         r_form_login = client.post("/api/auth/login", data=admin_creds)
@@ -377,13 +387,13 @@ def test_full_backend_suite():
         r_cors = client.options(
             "/api/projects",
             headers={
-                "Origin": "http://localhost:3000",
+                "Origin": "https://portfolio.durozen.in",
                 "Access-Control-Request-Method": "GET",
             },
         )
         assert r_cors.status_code == 200
-        assert r_cors.headers.get("access-control-allow-origin") == "http://localhost:3000"
-        print("   [PASS] CORS preflight headers properly configured")
+        assert r_cors.headers.get("access-control-allow-origin") == "https://portfolio.durozen.in"
+        print("   [PASS] CORS preflight for https://portfolio.durozen.in properly configured")
 
         print("\n=======================================================")
         print("  ALL 17 BACKEND SUITE VERIFICATIONS PASSED (100%!)")

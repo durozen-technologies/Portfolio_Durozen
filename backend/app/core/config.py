@@ -107,6 +107,8 @@ class Settings(BaseSettings):
             origins = []
 
         defaults = [
+            "https://portfolio.durozen.in",
+            "http://portfolio.durozen.in",
             "http://localhost:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3000",

@@ -5,7 +5,16 @@ export const dynamic = 'force-dynamic';
 
 function isDocker(): boolean {
   try {
-    return fs.existsSync('/.dockerenv') || Boolean(process.env.DOCKER_CONTAINER);
+    if (fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER) {
+      return true;
+    }
+    if (fs.existsSync('/proc/1/cgroup')) {
+      const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
+      if (cgroup.includes('docker') || cgroup.includes('containerd') || cgroup.includes('kubepods')) {
+        return true;
+      }
+    }
+    return false;
   } catch {
     return false;
   }
@@ -13,9 +22,9 @@ function isDocker(): boolean {
 
 function getBackendUrl(): string {
   if (process.env.DOCKER_BACKEND_URL) {
-    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '');
+    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '');
   }
-  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '');
+  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '').replace(/\/api\/?$/, '');
   const inContainer = isDocker();
 
   if (envUrl) {
@@ -30,10 +39,24 @@ function getBackendUrl(): string {
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ path?: string[] }> }
+  context: { params?: Promise<{ path?: string[] }> }
 ) {
-  const { path } = await context.params;
-  const pathString = Array.isArray(path) ? path.join('/') : '';
+  let pathString = '';
+  if (context?.params) {
+    try {
+      const resolved = await context.params;
+      if (Array.isArray(resolved?.path)) {
+        pathString = resolved.path.join('/');
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  if (!pathString) {
+    pathString = request.nextUrl.pathname.replace(/^\/?uploads\/?/, '');
+  }
+
   const search = request.nextUrl.search || '';
   const backendBase = getBackendUrl();
   const targetUrl = `${backendBase}/uploads/${pathString}${search}`;
