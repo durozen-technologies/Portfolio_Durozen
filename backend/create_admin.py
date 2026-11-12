@@ -1,12 +1,18 @@
 import sys
-import uuid
 import getpass
-from app.database import SessionLocal, engine, Base
-from app.models import AdminUser
-from app.auth import hash_password
+import os
+
+# Add backend directory to sys.path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from app.core.database import SessionLocal, init_database
+from app.services.auth_service import AuthService
+
 
 def main():
-    Base.metadata.create_all(bind=engine)
+    init_database()
     db = SessionLocal()
     try:
         if len(sys.argv) >= 3:
@@ -26,25 +32,14 @@ def main():
             print("❌ Error: Password must be at least 6 characters long.")
             sys.exit(1)
 
-        existing = db.query(AdminUser).filter(AdminUser.username == username).first()
-        if existing:
-            existing.password_hash = hash_password(password)
-            db.commit()
-            print(f"✅ Administrator '{username}' password updated successfully!")
-            return
-
-        new_admin = AdminUser(
-            id=f"admin_{uuid.uuid4().hex[:12]}",
-            username=username,
-            password_hash=hash_password(password),
-            role="admin"
-        )
-        db.add(new_admin)
-        db.commit()
-        print(f"✅ Administrator '{username}' created successfully!")
+        admin = AuthService.register_admin(db, username, password)
+        print(f"✅ Administrator '{admin.username}' created successfully!")
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
     finally:
         db.close()
 
+
 if __name__ == "__main__":
     main()
-

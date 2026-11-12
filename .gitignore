@@ -12,6 +12,7 @@ AGENTS.md
 # Python virtual environments & bytecode
 venv/
 .venv/
+test_venv/
 backend/venv/
 backend/.venv/
 __pycache__/
@@ -39,7 +40,11 @@ playwright-report/
 .DS_Store
 Thumbs.db
 *.log
-.aistudio/
+
+# Test artifacts
+*test_thumbnail*
+*zenith-ai-hyperdrive*
+public/assets/brand/
 
 # Environment Variables
 .env*

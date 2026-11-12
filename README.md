@@ -1,20 +1,82 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# DUROZEN - Creative Portfolio
 
-# Run and deploy your AI Studio app
+A premium, minimal, interactive portfolio for DUROZEN featuring realistic gravity logo physics, immersive project reveals, an interactive Admin Portal, and a FastAPI + PostgreSQL backend.
 
-This contains everything you need to run your app locally.
+## Architecture
 
-View your app in AI Studio: https://ai.studio/apps/128ee407-bd3d-4843-b9a8-4951c1dde1b8
+- **Frontend:** Next.js (App Router), React 19, Tailwind CSS v4, Motion, Three.js
+- **Backend:** FastAPI, Python 3.12, PostgreSQL (SQLAlchemy), Playwright (automated screenshots)
+- **Deployment:** Docker & Docker Compose with multistage builds
 
-## Run Locally
+## Getting Started
 
-**Prerequisites:**  Node.js
+### Prerequisites
 
+- Node.js (v20+ recommended)
+- Python 3.10+ (for local backend development) or Docker
+
+### 1. Frontend Setup
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+
+2. Configure environment:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 2. Backend Setup
+
+1. Install Python dependencies:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
+
+2. Configure environment:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Start the FastAPI backend:
+   ```bash
+   npm run backend
+   ```
+   Or from the backend directory:
+   ```bash
+   python run.py
+   ```
+
+   The backend will be available at [http://localhost:8000](http://localhost:8000) with interactive Swagger documentation at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+### 3. Docker Deployment (Recommended)
+
+Run the full stack (Frontend, Backend, and PostgreSQL) with Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+### Admin Portal
+
+Manage portfolio projects, client demos, and automated screenshots via the Admin Portal:
+- URL: [http://localhost:3000/admin](http://localhost:3000/admin)
+- For detailed setup and credentials, see [README_ADMIN.md](README_ADMIN.md).
+
+## Available Scripts
+
+- `npm run dev` - Start Next.js development server
+- `npm run build` - Build Next.js application for production
+- `npm run start` - Start production Next.js server
+- `npm run backend` - Start FastAPI backend server
+- `npm run backend:test` - Run backend API test suite
+- `npm run lint` - Run TypeScript type checking

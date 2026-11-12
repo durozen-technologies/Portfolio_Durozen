@@ -1,6 +1,4 @@
 {
   "name": "DUROZEN - Creative Portfolio",
-  "description": "A premium, minimal, interactive portfolio for DUROZEN featuring realistic gravity logo falling animation and immersive project reveal.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "A premium, minimal, interactive portfolio for DUROZEN featuring realistic gravity logo falling animation and immersive project reveal."
 }

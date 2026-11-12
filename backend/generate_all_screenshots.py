@@ -2,44 +2,26 @@ import os
 import sys
 import asyncio
 import logging
-import dotenv
 
-# Load environment
-BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-dotenv.load_dotenv(os.path.join(BACKEND_DIR, ".env"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
-if BACKEND_DIR not in sys.path:
-    sys.path.insert(0, BACKEND_DIR)
-
-from app.database import SessionLocal
-from app.models import Project
-from app.screenshot_service import capture_website_screenshot
+from app.core.database import SessionLocal, init_database
+from app.models.project import Project
+from app.services.screenshot_service import capture_website_screenshot
+from app.services.project_service import DEFAULT_PROJECTS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("generate_screenshots")
 
-# All known projects including database and static defaults
-FALLBACK_PROJECTS = [
-    {"id": "restaurant", "name": "Restaurant", "url": "https://rrhotell.netlify.app"},
-    {"id": "hospital", "name": "Hospital", "url": "https://carehosptial.netlify.app"},
-    {"id": "bridal-makeover", "name": "Bridal Makeover", "url": "https://bridall.netlify.app"},
-    {"id": "bridal", "name": "Bridal Makeover", "url": "https://bridall.netlify.app"},
-    {"id": "eye-care", "name": "Eye Care Center", "url": "https://eyecareee.netlify.app"},
-    {"id": "resort", "name": "Resort Getaway", "url": "https://resortt2.netlify.app"},
-    {"id": "mmr-motors", "name": "MMR Motors", "url": "https://mmrmotors.uk"},
-    {"id": "mmr-motor", "name": "MMR Motor", "url": "https://mmrmotor.netlify.app"},
-    {"id": "scootyy", "name": "Scootyy", "url": "https://scootyy.netlify.app"},
-    {"id": "salon", "name": "Salon Studio", "url": "https://salonn1.netlify.app"},
-    {"id": "nurserie-plant", "name": "Nurserie Plant", "url": "https://nurserieplant.netlify.app"},
-    {"id": "makeover", "name": "Makeover Studio", "url": "https://makeeeover.netlify.app"},
-    {"id": "eye-hospital", "name": "Eye Hospital", "url": "https://eyehospital1.netlify.app"},
-]
 
 async def process_all_screenshots():
+    logger.info("Initializing database schema...")
+    init_database()
     logger.info("Connecting to database...")
     db = SessionLocal()
-    
-    # 1. Fetch DB projects
+
     db_projects = []
     try:
         db_projects = db.query(Project).all()
@@ -47,24 +29,22 @@ async def process_all_screenshots():
     except Exception as e:
         logger.error(f"Error querying database: {e}")
 
-    # Build unique map of project items by id
     project_map = {}
     for p in db_projects:
         project_map[p.id] = {
             "id": p.id,
             "name": p.name,
             "url": p.url,
-            "db_instance": p
+            "db_instance": p,
         }
 
-    # Add fallback projects if not present in DB
-    for fb in FALLBACK_PROJECTS:
+    for fb in DEFAULT_PROJECTS:
         if fb["id"] not in project_map:
             project_map[fb["id"]] = {
                 "id": fb["id"],
                 "name": fb["name"],
                 "url": fb["url"],
-                "db_instance": None
+                "db_instance": None,
             }
 
     logger.info(f"Total projects to capture screenshots for: {len(project_map)}")
@@ -85,7 +65,6 @@ async def process_all_screenshots():
                 success_count += 1
                 logger.info(f"SUCCESS: Captured {name} -> {saved_url}")
 
-                # Update database record if exists
                 if pdata["db_instance"]:
                     pdata["db_instance"].image_url = saved_url
                     try:
@@ -104,11 +83,11 @@ async def process_all_screenshots():
 
     db.close()
     logger.info("\n=======================================================")
-    logger.info(f"SCREENSHOT GENERATION COMPLETED!")
+    logger.info("SCREENSHOT GENERATION COMPLETED!")
     logger.info(f"  Success: {success_count}")
     logger.info(f"  Failed:  {failure_count}")
     logger.info("=======================================================\n")
 
+
 if __name__ == "__main__":
     asyncio.run(process_all_screenshots())
-

@@ -1,13 +1,31 @@
+import fs from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-function getBackendUrl(): string {
-  const envUrl = process.env.BACKEND_URL || process.env.DOCKER_BACKEND_URL;
-  if (envUrl && !envUrl.includes('127.0.0.1') && !envUrl.includes('localhost')) {
-    return envUrl.replace(/\/+$/, '');
+function isDocker(): boolean {
+  try {
+    return fs.existsSync('/.dockerenv') || Boolean(process.env.DOCKER_CONTAINER);
+  } catch {
+    return false;
   }
-  return 'http://backend:8000';
+}
+
+function getBackendUrl(): string {
+  if (process.env.DOCKER_BACKEND_URL) {
+    return process.env.DOCKER_BACKEND_URL.replace(/\/+$/, '');
+  }
+  const envUrl = process.env.BACKEND_URL?.replace(/\/+$/, '');
+  const inContainer = isDocker();
+
+  if (envUrl) {
+    if (inContainer && (envUrl.includes('127.0.0.1') || envUrl.includes('localhost'))) {
+      return 'http://backend:8000';
+    }
+    return envUrl;
+  }
+
+  return inContainer ? 'http://backend:8000' : 'http://localhost:8000';
 }
 
 async function proxyRequest(

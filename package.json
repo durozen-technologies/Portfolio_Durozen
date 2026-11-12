@@ -7,13 +7,12 @@
     "dev": "next dev -p 3000 --webpack",
     "build": "next build --webpack",
     "start": "next start -p 3000",
-    "backend": "backend\\venv\\Scripts\\python.exe backend\\run.py",
-    "backend:test": "backend\\venv\\Scripts\\python.exe backend\\test_api.py",
+    "backend": "python3 backend/run.py || python backend/run.py",
+    "backend:test": "python3 backend/test_api.py || python backend/test_api.py",
     "clean": "rm -rf .next dist",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@tailwindcss/postcss": "^4.3.5",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
