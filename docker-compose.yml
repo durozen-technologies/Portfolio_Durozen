@@ -70,9 +70,9 @@ services:
       start_period: 10s
 
   # ------------------------------------------------------------
-  # Next.js Frontend Service (Connected to Dokploy Traefik Network)
+  # Next.js Frontend Service (Dokploy Web Service)
   # ------------------------------------------------------------
-  frontend:
+  web:
     build:
       context: .
       dockerfile: Dockerfile
@@ -85,15 +85,23 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    links:
+      - backend
     environment:
       BACKEND_URL: http://backend:8000
       DOCKER_BACKEND_URL: http://backend:8000
       DOCKER_CONTAINER: "true"
+    # Do NOT use "ports:" here
+    # Optional: "expose:" only documents the port internally for other containers
     expose:
-      - "3000"
+      - 3000
     networks:
-      - durozen-network
-      - dokploy-network
+      durozen-network:
+        aliases:
+          - frontend
+      dokploy-network:
+        aliases:
+          - frontend
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/ || exit 1"]
       interval: 10s

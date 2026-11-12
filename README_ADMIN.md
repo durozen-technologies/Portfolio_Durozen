@@ -53,11 +53,11 @@ docker compose down
 ```
 
 ### Container Services & Ports:
-| Service | Container Name | Host Port | Internal Port | Technology |
+| Service | Service / Alias Name | Host Port | Internal Port | Technology |
 | :--- | :--- | :--- | :--- | :--- |
-| **Frontend** | `durozen-frontend` | `3000` | `80` | Vite + React + Nginx (Multistage) |
-| **Backend** | `durozen-backend` | `8000` | `8000` | Python 3.12 + FastAPI + Playwright (Multistage) |
-| **Database** | `durozen-db` | `5432` | `5432` | PostgreSQL 16 Alpine (Multistage) |
+| **Frontend / Web** | `web` (alias: `frontend`) | Dokploy Traefik / None | `3000` | Next.js Standalone (Multistage) |
+| **Backend** | `backend` | Internal | `8000` | Python 3.12 + FastAPI + Playwright (Multistage) |
+| **Database** | `db` | Internal | `5432` | PostgreSQL 16 Alpine (Multistage) |
 
 ---
 
