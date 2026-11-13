@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: 'DUROZEN — Creative Project Portfolio',
   description:
     'A premium, minimal, interactive portfolio for DUROZEN featuring realistic gravity logo falling animation and immersive project reveal.',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/assets/aistudio/Durozen_500x500.jpg-removebg-preview__1__8c1ed3e1.png',
+  },
   openGraph: {
     title: 'DUROZEN — Creative Project Portfolio',
     description:
