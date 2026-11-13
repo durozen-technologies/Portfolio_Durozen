@@ -52,7 +52,6 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      AUTO_SEED: "true"
       CORS_ORIGINS: ${CORS_ORIGINS:-https://portfolio.durozen.in,http://portfolio.durozen.in,http://localhost:3000,http://127.0.0.1:3000}
       PORT: 8000
     expose:

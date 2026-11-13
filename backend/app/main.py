@@ -33,10 +33,6 @@ async def lifespan(app: FastAPI):
         db = SessionLocal()
         try:
             AuthService.init_master_admin(db)
-            if os.getenv("AUTO_SEED", "true").lower() in ("true", "1", "yes"):
-                count = ProjectService.seed_default_projects(db, force=False)
-                if count > 0:
-                    logger.info(f"Auto-seeded {count} projects.")
         except Exception as err:
             logger.warning(f"Note on startup initialization: {err}")
         finally:
