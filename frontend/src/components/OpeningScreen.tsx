@@ -271,7 +271,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onExplore }) => {
                 }}
                 className="text-[20px] sm:text-[22px] font-semibold leading-none animate-color-shift-text select-none text-center px-4"
                 style={{
-                  fontFamily: "'Playball', 'Satisfy', 'Dancing Script', 'Pacifico', cursive",
+                  fontFamily: "var(--font-script), cursive",
                 }}
               >
                 Touch to Explore
@@ -292,7 +292,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ onExplore }) => {
                 }}
                 className="text-[34px] sm:text-[40px] font-bold leading-tight -mt-0.5 animate-color-shift-text select-none text-center px-4 tracking-normal"
                 style={{
-                  fontFamily: "'Playball', 'Satisfy', 'Dancing Script', 'Pacifico', cursive",
+                  fontFamily: "var(--font-script), cursive",
                 }}
               >
                 our Project

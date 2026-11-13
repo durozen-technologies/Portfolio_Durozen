@@ -34,11 +34,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Outfit:wght@300;400;500;600;700;800&family=Pacifico&family=Playball&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Satisfy&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playball&display=swap"
         />
       </head>
-      <body className="bg-white text-slate-900 antialiased selection:bg-slate-900 selection:text-white">
+      <body className="bg-white text-slate-900 antialiased selection:bg-slate-900 selection:text-white font-sans">
         <AdminShortcutListener />
         {children}
       </body>

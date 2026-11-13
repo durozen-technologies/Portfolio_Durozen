@@ -37,6 +37,7 @@ export default function HomePage() {
         }`}
       >
         <PortfolioHome 
+          isActive={hasEnteredPortfolio}
           onNavigate={handleNavigate}
           onReplayIntro={handleReplayIntro} 
           onOpenAdmin={() => handleNavigate('/admin')}

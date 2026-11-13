@@ -1,15 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'motion/react';
 import { LIVE_PROJECTS, ProjectItem } from '../data/projects';
 import { api } from '../services/api';
 import { Navbar } from './Navbar';
 import { BackgroundEffects } from './BackgroundEffects';
 import { ProjectCard } from './ProjectCard';
-import { ProjectQuickViewModal } from './ProjectQuickViewModal';
 import { Footer } from './Footer';
 import { FolderKanban, Sparkles } from 'lucide-react';
+
+const ProjectQuickViewModal = dynamic(
+  () => import('./ProjectQuickViewModal').then(mod => mod.ProjectQuickViewModal),
+  { ssr: false }
+);
 
 interface ProjectsPageProps {
   onNavigate: (path: string) => void;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'motion/react';
 import { LIVE_PROJECTS, ProjectItem } from '../data/projects';
 import { api } from '../services/api';
@@ -10,15 +11,20 @@ import { BackgroundEffects } from './BackgroundEffects';
 import { AboutSection } from './AboutSection';
 import { ContactSection } from './ContactSection';
 import { Footer } from './Footer';
-import { ProjectQuickViewModal } from './ProjectQuickViewModal';
+
+const ProjectQuickViewModal = dynamic(
+  () => import('./ProjectQuickViewModal').then(mod => mod.ProjectQuickViewModal),
+  { ssr: false }
+);
 
 interface PortfolioHomeProps {
+  isActive?: boolean;
   onNavigate?: (path: string) => void;
   onReplayIntro?: () => void;
   onOpenAdmin?: () => void;
 }
 
-export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onReplayIntro, onOpenAdmin }) => {
+export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ isActive = true, onNavigate, onReplayIntro, onOpenAdmin }) => {
   // Use projects fetched dynamically from FastAPI / PostgreSQL with fallback
   const [projects, setProjects] = useState<ProjectItem[]>(LIVE_PROJECTS);
   const [activeCategory, setActiveCategory] = useState<string>('All');
@@ -43,19 +49,22 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
   // Background Hero Video ref
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Guarantee continuous crisp autoplay without browser mute blocks
+  // Crisp video playback management - play only when active
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.defaultMuted = true;
-      videoRef.current.muted = true;
+    if (!videoRef.current) return;
+    videoRef.current.defaultMuted = true;
+    videoRef.current.muted = true;
+    if (isActive) {
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
           console.warn('Video autoplay was prevented:', err);
         });
       }
+    } else {
+      videoRef.current.pause();
     }
-  }, []);
+  }, [isActive]);
 
   const categories = [
     'All',
@@ -88,23 +97,24 @@ export const PortfolioHome: React.FC<PortfolioHomeProps> = ({ onNavigate, onRepl
       <Navbar currentPath="/" onNavigate={handleNav} />
 
       {/* 3. HERO SECTION WITH CRYSTAL-CLEAR CINEMATIC BACKGROUND VIDEO */}
-      <section className="relative min-h-[90vh] md:min-h-screen flex flex-col justify-center items-center text-center px-6 py-20 z-10 overflow-hidden">
+      <section className="relative min-h-[90vh] md:min-h-screen flex flex-col justify-center items-center text-center px-6 py-20 z-10 overflow-hidden bg-slate-50">
         {/* Full-Screen Cinematic Background Video Layer (100% Crystal-Clear, Bright & Natural White Theme) */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0 bg-slate-50">
           <video
             ref={videoRef}
             src="/assets/aistudio/durozen_hero_video.mp4"
+            poster="/assets/aistudio/hero_poster.webp"
             autoPlay
             loop
             muted
             playsInline
-            preload="auto"
-            className="w-full h-full object-cover object-center"
+            preload="metadata"
+            className="w-full h-full object-cover object-center bg-slate-50"
           />
 
           {/* Clean White Top and Bottom Gradient Blends for Seamless Integration */}
-          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white via-white/50 to-transparent pointer-events-none" />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </div>
 
         {/* Seamless Hero Content (Directly over the crystal-clear video) */}
