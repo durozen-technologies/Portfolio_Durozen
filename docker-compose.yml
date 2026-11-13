@@ -52,6 +52,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      AUTO_SEED: "true"
       CORS_ORIGINS: ${CORS_ORIGINS:-https://portfolio.durozen.in,http://portfolio.durozen.in,http://localhost:3000,http://127.0.0.1:3000}
       PORT: 8000
     expose:
@@ -63,9 +64,11 @@ services:
       durozen-network:
         aliases:
           - durozen-backend
+          - backend
       dokploy-network:
         aliases:
           - durozen-backend
+          - backend
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
       interval: 10s
@@ -76,14 +79,15 @@ services:
   # ------------------------------------------------------------
   # Next.js Frontend Service (Dokploy Web Service)
   # ------------------------------------------------------------
-  web:
-    image: ${WEB_IMAGE:-durozen-web:latest}
+  frontend:
+    image: ${FRONTEND_IMAGE:-${WEB_IMAGE:-durozen-frontend:latest}}
     build:
       context: .
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
         BACKEND_URL: http://durozen-backend:8000
+        DOCKER_BACKEND_URL: http://durozen-backend:8000
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -102,9 +106,11 @@ services:
       durozen-network:
         aliases:
           - frontend
+          - web
       dokploy-network:
         aliases:
           - frontend
+          - web
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/ || exit 1"]
       interval: 10s

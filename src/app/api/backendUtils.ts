@@ -71,10 +71,14 @@ export function getPrimaryBackendUrl(): string {
 
 let verifiedBackendBase: string | null = null;
 
+export function invalidateVerifiedBackendBase(): void {
+  verifiedBackendBase = null;
+}
+
 async function isDurozenBackend(base: string): Promise<boolean> {
   try {
     const res = await fetch(`${base}/api/health`, {
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(4000),
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
@@ -94,11 +98,15 @@ async function isDurozenBackend(base: string): Promise<boolean> {
 export async function getVerifiedBackendBase(): Promise<string | null> {
   if (verifiedBackendBase) return verifiedBackendBase;
 
-  for (const base of getBackendCandidateBases()) {
+  const candidates = getBackendCandidateBases();
+  for (const base of candidates) {
     if (await isDurozenBackend(base)) {
       verifiedBackendBase = base;
       return base;
     }
   }
-  return null;
+
+  // Fallback to primary candidate if verification times out to prevent service failure
+  const primary = candidates[0] || (isDocker() ? 'http://durozen-backend:8000' : 'http://localhost:8000');
+  return primary;
 }

@@ -154,31 +154,11 @@ class ApiService {
     };
     const body = JSON.stringify({ username, password });
 
-    let response = await this.request('/api/auth/login', {
+    const response = await this.request('/api/auth/login', {
       method: 'POST',
       headers,
       body,
     });
-
-    // Fallback across trailing slash and legacy/direct route aliases if 404 encountered
-    if (response.status === 404) {
-      const fallbacks = ['/api/auth/login/', '/auth/login', '/auth/login/', '/api/v1/auth/login'];
-      for (const fb of fallbacks) {
-        try {
-          const fbRes = await this.request(fb, {
-            method: 'POST',
-            headers,
-            body,
-          });
-          if (fbRes.status !== 404) {
-            response = fbRes;
-            break;
-          }
-        } catch {
-          // continue fallback
-        }
-      }
-    }
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({ detail: 'Login failed' }));
