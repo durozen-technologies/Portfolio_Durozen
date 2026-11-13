@@ -82,7 +82,7 @@ services:
   frontend:
     image: ${FRONTEND_IMAGE:-${WEB_IMAGE:-durozen-frontend:latest}}
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
